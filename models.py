@@ -44,6 +44,7 @@ class Transaction(Base):
     account_id = Column(Integer, ForeignKey("accounts.id"), nullable=False)
     date = Column(Date, default=datetime.utcnow)
     description = Column(String, nullable=False)
+    counterparty = Column(String, nullable=True)
     amount = Column(Numeric(12, 2), nullable=False)
     balance = Column(Numeric(12, 2), nullable=False)
 
