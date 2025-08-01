@@ -1,36 +1,73 @@
 <!DOCTYPE html>
 <html lang="ru">
 <head>
-    <meta charset="utf-8"/>
-    <style>
-        body { font-family: "DejaVu Sans", sans-serif; font-size: 12px; }
-        table { width: 100%; border-collapse: collapse; }
-        th, td { border: 1px solid #000; padding: 2px 4px; }
-        th { background: #eee; }
-    </style>
+  <meta charset="utf-8"/>
+  <style>
+    @page { size: A4; margin: 20mm; }
+    body { font-family: "DejaVu Sans", "Helvetica", sans-serif; font-size: 10pt; }
+    header { position: relative; margin-bottom: 10mm; }
+    header h1 { font-size: 16pt; margin: 0; }
+    header img { position: absolute; top: 0; right: 0; height: 30px; }
+    .info { margin-top: 5mm; }
+    .info div { margin-bottom: 2mm; }
+    table { width: 100%; border-collapse: collapse; margin-top: 5mm; }
+    th, td { border: 1px solid #000; padding: 2px 4px; vertical-align: top; }
+    th { background: #eee; font-weight: bold; }
+    .totals { margin-top: 5mm; }
+    footer { position: fixed; bottom: 10mm; left: 0; right: 0; font-size: 9pt; }
+    footer .left { float: left; }
+    footer .center { text-align: center; }
+    footer .right { float: right; }
+  </style>
 </head>
 <body>
-<h2>Выписка по счёту {{ data.account.number|mask }}</h2>
-<p>Период: {{ data.statement.period_start|date }} — {{ data.statement.period_end|date }}</p>
+<header>
+  <h1>Выписка</h1>
+  <img src="static/logo.svg" alt="Логотип"/>
+  <div class="info">
+    <div>Период: {{ data.statement.period_start|date }} - {{ data.statement.period_end|date }}</div>
+    <div>Счёт: {{ data.account.number }}</div>
+  </div>
+</header>
+
+<div>Входящий остаток на {{ data.statement.period_start|date }}: {{ opening_balance|amount }}</div>
+
 <table>
-    <thead>
+  <thead>
     <tr>
-        <th>Дата</th>
-        <th>Описание</th>
-        <th>Сумма</th>
-        <th>Баланс</th>
+      <th style="width: 10%">Дата</th>
+      <th style="width: 30%">Плательщик / Получатель</th>
+      <th style="width: 40%">Операция</th>
+      <th style="width: 20%">Сумма (RUB)</th>
     </tr>
-    </thead>
-    <tbody>
+  </thead>
+  <tbody>
     {% for t in data.transactions %}
     <tr>
-        <td>{{ t.date|date }}</td>
-        <td>{{ t.description }}</td>
-        <td style="text-align:right">{{ t.amount|amount }}</td>
-        <td style="text-align:right">{{ t.balance|amount }}</td>
+      <td>{{ t.date|date }}</td>
+      <td>{{ t.counterparty or '' }}</td>
+      <td>{{ t.description }}</td>
+      <td style="text-align:right">{{ t.amount|amount }}</td>
     </tr>
     {% endfor %}
-    </tbody>
+  </tbody>
 </table>
+
+<div class="totals">
+  <div>Исходящий остаток на {{ data.statement.period_end|date }}: {{ closing_balance|amount }}</div>
+  <div>Поступление: {{ total_incoming|amount }}</div>
+  <div>Списание: {{ total_outgoing|amount }}</div>
+</div>
+
+<footer>
+  <div class="left">
+    <div>ПАО "БАНК "САНКТ-ПЕТЕРБУРГ"</div>
+    <div>БИК 044030790</div>
+    <div>{{ data.account.user.username }}</div>
+  </div>
+  <div class="center">1/1</div>
+  <div class="right">{{ data.statement.created_at|datetime_msk }}</div>
+</footer>
 </body>
 </html>
+

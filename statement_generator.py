@@ -1,7 +1,7 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from datetime import date
+from datetime import date, datetime
 from pathlib import Path
 from typing import Iterable, Optional
 
@@ -12,6 +12,11 @@ from PyPDF2 import PdfReader, PdfWriter
 from weasyprint import HTML
 
 from models import Account, Statement, Transaction
+from zoneinfo import ZoneInfo
+
+
+def format_datetime_msk(dt: datetime) -> str:
+    return dt.astimezone(ZoneInfo("Europe/Moscow")).strftime("%d.%m.%Y | %H:%M")
 
 
 def format_amount(value):
@@ -27,7 +32,7 @@ def format_date(d: date) -> str:
 
 
 def render_pdf(html: str, template_pdf: Optional[Path] = None) -> bytes:
-    pdf_bytes = HTML(string=html).write_pdf()
+    pdf_bytes = HTML(string=html, base_url=str(Path(".").resolve())).write_pdf()
     if not template_pdf:
         return pdf_bytes
     # overlay generated pdf onto template background
@@ -57,7 +62,20 @@ def generate_statement_pdf(data: StatementData, template_pdf: Optional[Path] = N
     env.filters["amount"] = format_amount
     env.filters["mask"] = mask_account
     env.filters["date"] = format_date
+    env.filters["datetime_msk"] = format_datetime_msk
+
+    txs = list(data.transactions)
+    opening_balance = txs[0].balance - txs[0].amount if txs else 0
+    closing_balance = txs[-1].balance if txs else opening_balance
+    total_incoming = sum(t.amount for t in txs if t.amount > 0)
+    total_outgoing = sum(t.amount for t in txs if t.amount < 0)
 
     template = env.get_template("statement.html")
-    html = template.render(data=data)
+    html = template.render(
+        data=data,
+        opening_balance=opening_balance,
+        closing_balance=closing_balance,
+        total_incoming=total_incoming,
+        total_outgoing=total_outgoing,
+    )
     return render_pdf(html, template_pdf)

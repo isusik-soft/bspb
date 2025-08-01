@@ -14,6 +14,7 @@ def main():
         db.flush()
         account = Account(number="40817810000000000001", user_id=user.id)
         db.add(account)
+        db.flush()
         balance = Decimal("10000.00")
         for i in range(10):
             amount = Decimal("1000.00")
@@ -21,6 +22,7 @@ def main():
             tx = Transaction(
                 account_id=account.id,
                 date=date(2024, 1, 1) + timedelta(days=i * 3),
+                counterparty=f"Контрагент {i}",
                 description=f"Покупка №{i}",
                 amount=-amount,
                 balance=balance,
