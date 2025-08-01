@@ -1,16 +1,18 @@
 from __future__ import annotations
 
 import os
-from datetime import datetime
+from datetime import date, datetime
 from pathlib import Path
 from typing import Optional
 
-from flask import Flask, abort, jsonify, request, send_file
+from flask import Flask, abort, jsonify, request, send_file, render_template
 from sqlalchemy.orm import Session
 
 from database import init_db
 from models import Account, Statement, StatementTransaction, Transaction
 from statement_generator import StatementData, generate_statement_pdf
+from dataclasses import dataclass
+from io import BytesIO
 
 # --- конфиг путей ---
 BASE_DIR = Path(__file__).resolve().parent
@@ -28,7 +30,39 @@ SessionLocal = init_db(DB_URL)
 app = Flask(__name__)
 
 
-def parse_iso_date(value: Optional[str]) -> Optional[datetime.date]:
+# --- простые структуры данных для ручной генерации ---
+
+
+@dataclass
+class SimpleUser:
+    username: str
+
+
+@dataclass
+class SimpleAccount:
+    number: str
+    currency: str = "RUB"
+    user: SimpleUser | None = None
+
+
+@dataclass
+class SimpleStatement:
+    period_start: date
+    period_end: date
+    created_at: datetime = datetime.utcnow()
+    generated_by: str = "manual"
+
+
+@dataclass
+class SimpleTransaction:
+    date: date
+    description: str
+    counterparty: str
+    amount: float
+    balance: float
+
+
+def parse_iso_date(value: Optional[str]) -> Optional[date]:
     if not value:
         return None
     try:
@@ -41,6 +75,11 @@ def parse_iso_date(value: Optional[str]) -> Optional[datetime.date]:
             return datetime.fromisoformat(value.split("T")[0]).date()
         except Exception:
             return None
+
+
+@app.route("/")
+def index():
+    return render_template("index.html")
 
 
 @app.route("/accounts", methods=["GET"])
@@ -87,6 +126,61 @@ def list_transactions():
                 for t in txs
             ]
         )
+
+
+@app.route("/statement/custom", methods=["POST"])
+def statement_custom():
+    payload = request.get_json(force=True)
+    if not payload:
+        return jsonify({"error": "Тело должно быть JSON"}), 400
+
+    try:
+        fio = payload["fio"]
+        account_number = payload["account"]
+        start = datetime.fromisoformat(payload["from"]).date()
+        end = datetime.fromisoformat(payload["to"]).date()
+        ops = payload.get("operations", [])
+    except KeyError as e:
+        return jsonify({"error": f"Отсутствует поле: {e.args[0]}"}), 400
+    except ValueError as e:
+        return jsonify({"error": f"Ошибка разбора даты: {e}"}), 400
+
+    user = SimpleUser(username=fio)
+    account = SimpleAccount(number=account_number, user=user)
+    statement = SimpleStatement(period_start=start, period_end=end)
+
+    running_balance = 0.0
+    transactions: list[SimpleTransaction] = []
+    for op in ops:
+        try:
+            dt = datetime.fromisoformat(op["date"]).date()
+            amount = float(op["amount"])
+            desc = op.get("description", "")
+            cp = op.get("counterparty", "")
+        except KeyError as e:
+            return jsonify({"error": f"Отсутствует поле операции: {e.args[0]}"}), 400
+        except ValueError as e:
+            return jsonify({"error": f"Ошибка в операции: {e}"}), 400
+        running_balance += amount
+        transactions.append(
+            SimpleTransaction(
+                date=dt,
+                description=desc,
+                counterparty=cp,
+                amount=amount,
+                balance=running_balance,
+            )
+        )
+
+    stmt_data = StatementData(statement=statement, account=account, transactions=transactions)
+    pdf_bytes = generate_statement_pdf(stmt_data)
+
+    return send_file(
+        BytesIO(pdf_bytes),
+        mimetype="application/pdf",
+        as_attachment=True,
+        download_name="statement.pdf",
+    )
 
 
 @app.route("/statement/generate", methods=["POST"])
