@@ -4,7 +4,7 @@ set -euo pipefail
 # --------------------------------------------
 # Настройки по умолчанию
 # --------------------------------------------
-BRANCH="main"
+BRANCH="vscode"
 SERVICE_NAME="bspb.service"
 UPDATE_METHOD="pull"
 DO_CLEAN=false
