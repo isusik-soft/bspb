@@ -33,16 +33,19 @@ from models import Account, Statement, Transaction
 from zoneinfo import ZoneInfo
 
 
-def format_datetime_msk(dt: datetime) -> str:
+def format_ts(dt: datetime) -> str:
     return dt.astimezone(ZoneInfo("Europe/Moscow")).strftime("%d.%m.%Y | %H:%M")
 
 
-def format_amount(value):
+def rub_format(value):
     return f"{value:,.2f}".replace(",", " ").replace(".", ",")
 
 
-def mask_account(number: str) -> str:
-    return number[:-4].replace(number[:-4], "*" * (len(number) - 4)) + number[-4:]
+def account_format(acc: str) -> str:
+    digits = "".join(filter(str.isdigit, str(acc)))
+    if len(digits) == 20:
+        return f"{digits[0:5]} {digits[5:8]} {digits[8:9]} {digits[9:13]} {digits[13:]}"
+    return acc
 
 
 def format_date(d: date) -> str:
@@ -77,10 +80,10 @@ def generate_statement_pdf(data: StatementData, template_pdf: Optional[Path] = N
     env = Environment(
         loader=FileSystemLoader("templates"), autoescape=select_autoescape(["html"])  # type: ignore
     )
-    env.filters["amount"] = format_amount
-    env.filters["mask"] = mask_account
+    env.filters["rub_format"] = rub_format
+    env.filters["account_format"] = account_format
     env.filters["date"] = format_date
-    env.filters["datetime_msk"] = format_datetime_msk
+    env.filters["format_ts"] = format_ts
 
     txs = list(data.transactions)
     opening_balance = txs[0].balance - txs[0].amount if txs else 0
