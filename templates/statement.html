@@ -58,6 +58,10 @@ h1 {
   padding: 2pt;
   vertical-align: top;
 }
+.operations td {
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
 .operations thead th {
   font-weight: bold;
 }
@@ -90,14 +94,14 @@ footer .right {
 </head>
 <body>
 <h1>Выписка</h1>
-<p>Период: {{ data.statement.period_start|date }} – {{ data.statement.period_end|date }}</p>
+<p>Период: {{ data.statement.period_start|date }} - {{ data.statement.period_end|date }}</p>
 <table class="header-table">
+  <tr>
+    <td colspan="2">Счёт: {{ data.account.number|account_format }}</td>
+  </tr>
   <tr>
     <td>Входящий остаток на {{ data.statement.period_start|date }}</td>
     <td>{{ opening_balance|rub_format }}</td>
-  </tr>
-  <tr>
-    <td colspan="2">Счёт: {{ data.account.number|account_format }}</td>
   </tr>
 </table>
 
@@ -126,18 +130,18 @@ footer .right {
     </tr>
     {% endfor %}
     <tr>
+      <td colspan="3">Исходящий остаток на {{ data.statement.period_end|date }}</td>
+      <td style="font-weight:bold;">{{ closing_balance|rub_format }}</td>
+    </tr>
+    <tr>
       <td colspan="2"></td>
-      <td>Поступление:</td>
+      <td>Поступление</td>
       <td>{{ total_incoming|rub_format }}</td>
     </tr>
     <tr>
       <td colspan="2"></td>
-      <td>Списание:</td>
+      <td>Списание</td>
       <td>{{ total_outgoing|rub_format }}</td>
-    </tr>
-    <tr>
-      <td colspan="3">Исходящий остаток на {{ data.statement.period_end|date }}:</td>
-      <td style="font-weight:bold;">{{ closing_balance|rub_format }}</td>
     </tr>
   </tbody>
 </table>
