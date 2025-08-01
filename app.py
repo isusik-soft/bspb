@@ -264,6 +264,24 @@ def statement_pdf(statement_id: int):
     return send_file(file_path, mimetype="application/pdf")
 
 
+@app.route("/statements", methods=["GET"])
+def list_statements_meta():
+    with SessionLocal() as db:
+        stmts = db.query(Statement).order_by(Statement.created_at.desc()).all()
+        return jsonify(
+            [
+                {
+                    "id": s.id,
+                    "account_number": s.account.number,
+                    "period_start": s.period_start.isoformat(),
+                    "period_end": s.period_end.isoformat(),
+                    "generated_at": s.created_at.isoformat(),
+                }
+                for s in stmts
+            ]
+        )
+
+
 if __name__ == "__main__":
     debug_flag = os.environ.get("FLASK_DEBUG", "0") in ("1", "true", "True")
     app.run(host="0.0.0.0", port=3000, debug=debug_flag)

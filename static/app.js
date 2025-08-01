@@ -1,49 +1,43 @@
-function addOperationRow() {
-  const tbody = document.querySelector('#opsTable tbody');
-  const tr = document.createElement('tr');
-  tr.innerHTML = `
-    <td><input type="date" class="form-control" required></td>
-    <td><input type="text" class="form-control" placeholder="Контрагент"></td>
-    <td><input type="text" class="form-control" placeholder="Описание" required></td>
-    <td><input type="number" step="0.01" class="form-control" placeholder="0.00" required></td>
-    <td><button type="button" class="btn btn-outline-danger btn-sm remove-op">×</button></td>
-  `;
-  tbody.appendChild(tr);
+async function fetchAccounts() {
+  const resp = await fetch('/accounts');
+  if (!resp.ok) return;
+  const accounts = await resp.json();
+  const select = document.getElementById('accountSelect');
+  select.innerHTML = '';
+  accounts.forEach(acc => {
+    const option = document.createElement('option');
+    option.value = acc.id;
+    option.textContent = `${acc.number} (${acc.currency})`;
+    select.appendChild(option);
+  });
 }
 
-document.getElementById('addOp').addEventListener('click', addOperationRow);
-
-document.getElementById('opsTable').addEventListener('click', function(e) {
-  if (e.target.classList.contains('remove-op')) {
-    e.target.closest('tr').remove();
-  }
-});
-
-addOperationRow();
-
-document.getElementById('statementForm').addEventListener('submit', async function(e) {
-  e.preventDefault();
-  const ops = [];
-  document.querySelectorAll('#opsTable tbody tr').forEach(row => {
-    const inputs = row.querySelectorAll('input');
-    const [date, counterparty, desc, amount] = inputs;
-    if (date.value && desc.value && amount.value) {
-      ops.push({
-        date: date.value,
-        counterparty: counterparty.value,
-        description: desc.value,
-        amount: parseFloat(amount.value)
-      });
-    }
+async function refreshStatements() {
+  const resp = await fetch('/statements');
+  if (!resp.ok) return;
+  const statements = await resp.json();
+  const list = document.getElementById('statementsList');
+  list.innerHTML = '';
+  statements.forEach(st => {
+    const li = document.createElement('li');
+    li.className = 'list-group-item';
+    const link = document.createElement('a');
+    link.href = `/statement/${st.id}.pdf`;
+    link.textContent = `${st.account_number} | ${st.period_start} - ${st.period_end}`;
+    li.appendChild(link);
+    list.appendChild(li);
   });
+}
+
+document.getElementById('generateForm').addEventListener('submit', async function (e) {
+  e.preventDefault();
   const payload = {
-    fio: document.getElementById('fio').value,
-    account: document.getElementById('account').value,
-    from: document.getElementById('start').value,
-    to: document.getElementById('end').value,
-    operations: ops
+    account_id: parseInt(document.getElementById('accountSelect').value, 10),
+    from: document.getElementById('dbStart').value,
+    to: document.getElementById('dbEnd').value,
+    user: 'web'
   };
-  const resp = await fetch('/statement/custom', {
+  const resp = await fetch('/statement/generate', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(payload)
@@ -52,13 +46,12 @@ document.getElementById('statementForm').addEventListener('submit', async functi
     alert('Ошибка при генерации выписки');
     return;
   }
-  const blob = await resp.blob();
-  const url = window.URL.createObjectURL(blob);
-  const a = document.createElement('a');
-  a.href = url;
-  a.download = 'statement.pdf';
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-  window.URL.revokeObjectURL(url);
+  const data = await resp.json();
+  const linkDiv = document.getElementById('generatedLink');
+  linkDiv.innerHTML = `<a href="/statement/${data.id}.pdf" target="_blank">Скачать PDF</a>`;
+  refreshStatements();
 });
+
+fetchAccounts();
+refreshStatements();
+
