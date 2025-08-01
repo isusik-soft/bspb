@@ -1,0 +1,46 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+  <meta charset="UTF-8">
+  <title>Создание выписки</title>
+  <link rel="stylesheet" href="style.css">
+  <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/jspdf-autotable@3.5.25/dist/jspdf.plugin.autotable.min.js"></script>
+</head>
+<body>
+  <h1>Создание выписки</h1>
+  <form id="statement-form">
+    <div class="field">
+      <label for="fio">ФИО</label>
+      <input id="fio" type="text" required>
+    </div>
+    <div class="field">
+      <label for="account">Счёт</label>
+      <input id="account" type="text" required>
+    </div>
+    <div class="field">
+      <label for="start-date">Дата начала</label>
+      <input id="start-date" type="date" required>
+    </div>
+    <div class="field">
+      <label for="end-date">Дата окончания</label>
+      <input id="end-date" type="date" required>
+    </div>
+    <h2>Операции</h2>
+    <table id="operations-table">
+      <thead>
+        <tr>
+          <th>Дата</th>
+          <th>Описание</th>
+          <th>Сумма</th>
+          <th></th>
+        </tr>
+      </thead>
+      <tbody></tbody>
+    </table>
+    <button type="button" id="add-operation">Добавить операцию</button>
+    <button type="button" id="download">Скачать PDF</button>
+  </form>
+  <script src="script.js"></script>
+</body>
+</html>
