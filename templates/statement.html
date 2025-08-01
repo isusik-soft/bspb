@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="utf-8"/>
+    <style>
+        body { font-family: "DejaVu Sans", sans-serif; font-size: 12px; }
+        table { width: 100%; border-collapse: collapse; }
+        th, td { border: 1px solid #000; padding: 2px 4px; }
+        th { background: #eee; }
+    </style>
+</head>
+<body>
+<h2>Выписка по счёту {{ data.account.number|mask }}</h2>
+<p>Период: {{ data.statement.period_start|date }} — {{ data.statement.period_end|date }}</p>
+<table>
+    <thead>
+    <tr>
+        <th>Дата</th>
+        <th>Описание</th>
+        <th>Сумма</th>
+        <th>Баланс</th>
+    </tr>
+    </thead>
+    <tbody>
+    {% for t in data.transactions %}
+    <tr>
+        <td>{{ t.date|date }}</td>
+        <td>{{ t.description }}</td>
+        <td style="text-align:right">{{ t.amount|amount }}</td>
+        <td style="text-align:right">{{ t.balance|amount }}</td>
+    </tr>
+    {% endfor %}
+    </tbody>
+</table>
+</body>
+</html>
