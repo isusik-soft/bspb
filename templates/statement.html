@@ -2,99 +2,251 @@
 <html lang="ru">
 <head>
   <meta charset="utf-8"/>
+  <title>Выписка</title>
+
   <style>
-    @page { size: A4; margin: 20pt; }
+    /* --- размеры как в оригинале: A4, поля в 20pt --- */
+    @page {
+      size: A4;
+      margin: 20pt;
+    }
+
+    /* --- шрифты: нужно положить реальные файлы в fonts/ --- */
+    @font-face {
+      font-family: "CustomSans";
+      src: url("fonts/Regular.woff2") format("woff2");
+      font-weight: 400;
+      font-style: normal;
+    }
+    @font-face {
+      font-family: "CustomSans";
+      src: url("fonts/Bold.woff2") format("woff2");
+      font-weight: 700;
+      font-style: normal;
+    }
+
     body {
-      font-family: "DejaVu Sans", "Helvetica", sans-serif;
-      font-size: 8pt;
+      margin: 0;
+      padding: 0;
+      font-family: "CustomSans", "DejaVu Sans", sans-serif;
+      font-size: 9pt;
+      line-height: 1.1;
       color: #000;
     }
-    h1 { font-size: 16pt; margin: 0; }
-    .header { position: relative; margin-bottom: 8pt; }
-    .header img { position: absolute; top: 0; right: 0; height: 40px; }
-    .meta { font-size: 10pt; margin-top: 8pt; }
-    .account-line {
+
+    .container {
+      width: 100%;
+      box-sizing: border-box;
+    }
+
+    .header {
       display: flex;
       justify-content: space-between;
-      font-size: 8pt;
-      margin-top: 4pt;
+      align-items: flex-start;
+      margin-bottom: 6pt;
+      gap: 8pt;
     }
-    table {
+
+    .title-block {
+      flex: 1;
+      display: flex;
+      flex-direction: column;
+      gap: 2pt;
+    }
+
+    .title {
+      font-size: 24px;
+      font-weight: 700;
+      margin: 0;
+      line-height: 1;
+    }
+
+    .period {
+      font-size: 10pt;
+      margin: 0;
+      padding-top: 2pt;
+    }
+
+    .account-info {
+      margin-top: 4pt;
+      display: flex;
+      justify-content: space-between;
+      font-size: 9pt;
+      gap: 10pt;
+    }
+
+    .account-info .left,
+    .account-info .right {
+      display: flex;
+      flex-direction: column;
+      gap: 2pt;
+    }
+
+    .balance-line {
+      margin-top: 4pt;
+      font-size: 9pt;
+    }
+
+    .logo {
+      flex-shrink: 0;
+      width: 150px;
+      height: auto;
+    }
+
+    /* таблица операций */
+    .tx-table {
       width: 100%;
       border-collapse: collapse;
       margin-top: 8pt;
-      font-size: 8pt;
+      font-size: 9pt;
     }
-    th, td { border: 1pt solid #000; padding: 2pt 4pt; vertical-align: top; }
-    th { font-weight: bold; text-align: left; }
-    th.amount, td.amount { text-align: right; }
+
+    .tx-table th,
+    .tx-table td {
+      padding: 4px 6px;
+      vertical-align: top;
+    }
+
+    .tx-table thead th {
+      font-weight: 700;
+      text-align: left;
+      border-bottom: 1px solid #000;
+    }
+
+    .tx-table tbody tr {
+      /* нет внешних границ между строками, чтобы было как в оригинале — можно добавить light separator */
+    }
+
+    .tx-table td.amount {
+      text-align: right;
+      white-space: nowrap;
+      font-feature-settings: "tnum";
+    }
+
+    .tx-table td.description {
+      white-space: pre-wrap;
+    }
+
+    /* Итоги */
     .summary {
-      margin-top: 8pt;
+      margin-top: 12pt;
       font-size: 10pt;
       display: flex;
       flex-direction: column;
       align-items: flex-end;
+      gap: 2pt;
+      font-weight: 400;
     }
+
+    .summary .line {
+      display: flex;
+      gap: 8pt;
+    }
+
+    .summary .label {
+      min-width: 180px;
+    }
+
+    /* Футер */
     footer {
       position: fixed;
       bottom: 20pt;
       left: 20pt;
       right: 20pt;
       font-size: 8pt;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      padding-top: 4pt;
+      border-top: 0.5pt solid #000;
     }
-    footer .left { float: left; }
-    footer .center { position: absolute; left: 50%; transform: translateX(-50%); }
-    footer .right { float: right; text-align: right; }
+
+    .footer-left,
+    .footer-right {
+      display: flex;
+      flex-direction: column;
+      gap: 2pt;
+    }
+
+    .footer-center {
+      text-align: center;
+      font-size: 8pt;
+    }
+
+    .small {
+      font-size: 7pt;
+    }
+
+    .spaced-account {
+      letter-spacing: 1px; /* можно тонко подогнать, чтобы группа цифр выглядела как в оригинале */
+    }
+
+    .bold {
+      font-weight: 700;
+    }
   </style>
 </head>
+
 <body>
-<div class="header">
-  <img src="static/logo.svg" alt="Банк Санкт-Петербург"/>
-  <h1>Выписка</h1>
-  <div class="meta">Период: {{ data.statement.period_start|date }} - {{ data.statement.period_end|date }}</div>
-  <div class="account-line">
-    <div>Счёт: {{ data.account.number }}</div>
-    <div>Входящий остаток на {{ data.statement.period_start|date }}: {{ opening_balance|amount }}</div>
-  </div>
-</div>
+  <div class="container">
+    <div class="header">
+      <div class="title-block">
+        <div class="title">Выписка</div>
+        <div class="period">Период: {{ data.statement.period_start|date }} - {{ data.statement.period_end|date }}</div>
+        <div class="account-info">
+          <div class="left">
+            <div>Счёт: <span class="spaced-account">{{ data.account.number }}</span></div>
+          </div>
+          <div class="right">
+            <div class="balance-line">Входящий остаток на {{ data.statement.period_start|date }}: {{ opening_balance|amount }}</div>
+          </div>
+        </div>
+      </div>
+      <div>
+        <img src="static/logo.png" alt="лого" class="logo"/>
+      </div>
+    </div>
 
-<table>
-  <thead>
-    <tr>
-      <th style="width:75pt">Дата</th>
-      <th style="width:170pt">Плательщик / Получатель</th>
-      <th>Операция</th>
-      <th class="amount" style="width:80pt">Сумма (RUB)</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for t in data.transactions %}
-    <tr>
-      <td>{{ t.date|date }}</td>
-      <td>{{ t.counterparty or '' }}</td>
-      <td>{{ t.description }}</td>
-      <td class="amount">{{ t.amount|amount }}</td>
-    </tr>
-    {% endfor %}
-  </tbody>
-</table>
-<div class="summary">
-  <div>Исходящий остаток на {{ data.statement.period_end|date }}: {{ closing_balance|amount }}</div>
-  <div>Поступление: {{ total_incoming|amount }}</div>
-  <div>Списание: {{ total_outgoing|amount }}</div>
-</div>
+    <table class="tx-table">
+      <thead>
+        <tr>
+          <th style="width:70pt;">Дата</th>
+          <th style="width:170pt;">Плательщик / Получатель</th>
+          <th>Операция</th>
+          <th style="width:80pt;" class="amount">Сумма (RUB)</th>
+        </tr>
+      </thead>
+      <tbody>
+        {% for t in data.transactions %}
+        <tr>
+          <td>{{ t.date|date }}</td>
+          <td>{{ t.counterparty or '' }}</td>
+          <td class="description">{{ t.description }}</td>
+          <td class="amount">{{ t.amount|amount }}</td>
+        </tr>
+        {% endfor %}
+      </tbody>
+    </table>
 
-<footer>
-  <div class="left">
-    <div>ПАО "БАНК "САНКТ-ПЕТЕРБУРГ"</div>
-    <div>БИК 044030790</div>
+    <div class="summary">
+      <div class="line"><div class="label">Поступление:</div> <div>{{ total_incoming|amount }}</div></div>
+      <div class="line"><div class="label">Списание:</div> <div>{{ total_outgoing|amount }}</div></div>
+      <div class="line bold"><div class="label">Исходящий остаток на {{ data.statement.period_end|date }}:</div> <div>{{ closing_balance|amount }}</div></div>
+    </div>
   </div>
-  <div class="center">1/1</div>
-  <div class="right">
-    <div>{{ data.account.user.username }}</div>
-    <div>{{ data.statement.created_at|datetime_msk }}</div>
-  </div>
-</footer>
+
+  <footer>
+    <div class="footer-left">
+      <div>ПАО "БАНК "САНКТ-ПЕТЕРБУРГ"</div>
+      <div>БИК 044030790</div>
+    </div>
+    <div class="footer-center">
+      {{ page_number }}/{{ total_pages }}
+    </div>
+    <div class="footer-right">
+      <div>{{ data.account.user.username }}</div>
+      <div>{{ data.statement.created_at|datetime_msk }}</div>
+    </div>
+  </footer>
 </body>
 </html>
-
