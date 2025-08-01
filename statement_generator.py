@@ -5,10 +5,28 @@ from datetime import date, datetime
 from pathlib import Path
 from typing import Iterable, Optional
 
+import inspect
+import pydyf
 from jinja2 import Environment, FileSystemLoader, select_autoescape
 from io import BytesIO
 
 from PyPDF2 import PdfReader, PdfWriter
+
+# NOTE: Some deployments may have a combination of WeasyPrint and pydyf
+# where WeasyPrint expects ``pydyf.PDF`` to accept additional ``version`` and
+# ``identifier`` arguments.  Newer versions of ``pydyf`` removed these
+# parameters, leading to ``TypeError`` when WeasyPrint attempts to call the
+# constructor.  To remain compatible with both variants we monkeypatch
+# ``pydyf.PDF.__init__`` to accept the optional arguments and ignore them when
+# they are not supported.
+if "version" not in inspect.signature(pydyf.PDF.__init__).parameters:
+    _orig_pdf_init = pydyf.PDF.__init__
+
+    def _patched_pdf_init(self, version=None, identifier=None):
+        _orig_pdf_init(self)
+
+    pydyf.PDF.__init__ = _patched_pdf_init
+
 from weasyprint import HTML
 
 from models import Account, Statement, Transaction
