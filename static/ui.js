@@ -127,8 +127,31 @@
     };
   }
 
+  function validateOperations() {
+    let ok = true;
+    Array.from(opsBody.querySelectorAll('tr')).forEach(tr => {
+      const inputs = Array.from(tr.querySelectorAll('input'));
+      const values = inputs.map(inp => inp.value.trim());
+      const filled = values.some(v => v !== '');
+      const allFilled = values.every(v => v !== '');
+      inputs.forEach(inp => inp.classList.remove('is-invalid'));
+      if (filled && !allFilled) {
+        ok = false;
+        inputs.forEach((inp, i) => { if (!values[i]) inp.classList.add('is-invalid'); });
+      }
+    });
+    return ok;
+  }
+
   function gatherData() {
-    const operations = Array.from(opsBody.querySelectorAll('tr')).map(tr => getRowData(tr));
+    const operations = [];
+    Array.from(opsBody.querySelectorAll('tr')).forEach(tr => {
+      const op = getRowData(tr);
+      const amtRaw = tr.querySelector('.op-amount').value.trim();
+      if (op.date && op.counterparty && op.description && amtRaw !== '') {
+        operations.push(op);
+      }
+    });
     return {
       id: currentId,
       bank: bankSelect.value,
@@ -168,6 +191,10 @@
   });
 
   async function saveStatement() {
+    if (!validateOperations()) {
+      alert('Есть незаполненные операции. Заполните поля или удалите пустые строки.');
+      return null;
+    }
     const payload = gatherData();
     const resp = await fetch('/statement/custom', {
       method: 'POST',
