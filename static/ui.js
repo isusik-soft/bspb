@@ -92,12 +92,17 @@
     });
   }
 
+  function getNumber(input) {
+    const val = input.valueAsNumber;
+    return Number.isNaN(val) ? 0 : val;
+  }
+
   function getRowData(tr) {
     return {
       date: tr.querySelector('.op-date').value,
       counterparty: tr.querySelector('.op-counterparty').value,
       description: tr.querySelector('.op-description').value,
-      amount: parseFloat(tr.querySelector('.op-amount').value || 0)
+      amount: getNumber(tr.querySelector('.op-amount'))
     };
   }
 
@@ -108,7 +113,7 @@
       fio: ownerInput.value.trim(),
       from: startInput.value,
       to: endInput.value,
-      opening_balance: parseFloat(openingInput.value || 0),
+      opening_balance: getNumber(openingInput),
       operations
     };
   }
@@ -116,10 +121,10 @@
   function updateTotals() {
     let incoming = 0, outgoing = 0;
     Array.from(opsBody.querySelectorAll('tr')).forEach(tr => {
-      const val = parseFloat(tr.querySelector('.op-amount').value || 0);
+      const val = getNumber(tr.querySelector('.op-amount'));
       if (val >= 0) incoming += val; else outgoing += Math.abs(val);
     });
-    const opening = parseFloat(openingInput.value || 0);
+    const opening = getNumber(openingInput);
     const closing = opening + incoming - outgoing;
     incomingEl.textContent = incoming.toFixed(2);
     outgoingEl.textContent = outgoing.toFixed(2);
@@ -166,7 +171,7 @@
         ownerInput.value = data.fio || '';
         startInput.value = data.from || '';
         endInput.value = data.to || '';
-        openingInput.value = data.opening_balance || 0;
+        openingInput.value = data.opening_balance != null ? data.opening_balance : 0;
         (data.operations || []).forEach(addOperation);
       } catch (e) {
         addOperation();
