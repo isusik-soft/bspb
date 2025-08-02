@@ -13,7 +13,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from .models import Account, Statement, Transaction, StatementTransaction
+from .models import Account, Statement
 from statement_generator import StatementData, generate_statement_pdf
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -88,24 +88,40 @@ def statement_custom(request):
         payload = json.loads(request.body)
     except json.JSONDecodeError:
         return JsonResponse({'error': 'Тело должно быть JSON'}, status=400)
+
     try:
+        stmt_id = payload.get('id')
         fio = payload['fio']
         account_number = payload['account']
         start = datetime.fromisoformat(payload['from']).date()
         end = datetime.fromisoformat(payload['to']).date()
         opening_raw = payload.get('opening_balance')
-        opening_balance = parse_amount(opening_raw) if opening_raw is not None else None
+        opening_balance = parse_amount(opening_raw) if opening_raw is not None else 0
         ops = payload.get('operations', [])
     except KeyError as e:
         return JsonResponse({'error': f'Отсутствует поле: {e.args[0]}'}, status=400)
     except ValueError as e:
         return JsonResponse({'error': f'Ошибка разбора даты/суммы: {e}'}, status=400)
 
-    user = SimpleUser(username=fio)
-    account = SimpleAccount(number=account_number, user=user)
-    statement = SimpleStatement(period_start=start, period_end=end)
+    account, _ = Account.objects.get_or_create(number=account_number, defaults={'user': request.user})
 
-    running_balance = opening_balance if opening_balance is not None else 0
+    if stmt_id:
+        statement = get_object_or_404(Statement, pk=stmt_id, generated_by=request.user.username)
+        statement.account = account
+        statement.period_start = start
+        statement.period_end = end
+        statement.data = payload
+        statement.save()
+    else:
+        statement = Statement.objects.create(
+            account=account,
+            period_start=start,
+            period_end=end,
+            generated_by=request.user.username,
+            data=payload,
+        )
+
+    running_balance = opening_balance
     transactions: list[SimpleTransaction] = []
     for op in ops:
         try:
@@ -128,82 +144,36 @@ def statement_custom(request):
             )
         )
 
+    stmt_obj = SimpleStatement(period_start=start, period_end=end)
+    user_obj = SimpleUser(username=fio)
+    account_obj = SimpleAccount(number=account_number, user=user_obj)
+
     stmt_data = StatementData(
-        statement=statement,
-        account=account,
+        statement=stmt_obj,
+        account=account_obj,
         transactions=transactions,
-        opening_balance=opening_balance,
-    )
-    pdf_bytes = generate_statement_pdf(stmt_data)
-    return FileResponse(
-        BytesIO(pdf_bytes),
-        content_type='application/pdf',
-        as_attachment=True,
-        filename='statement.pdf',
-    )
-
-
-@csrf_exempt
-@require_POST
-@login_required
-def generate_statement(request):
-    try:
-        payload = json.loads(request.body)
-    except json.JSONDecodeError:
-        return JsonResponse({'error': 'Тело должно быть JSON'}, status=400)
-    try:
-        account_id = int(payload['account_id'])
-        start = datetime.fromisoformat(payload['from']).date()
-        end = datetime.fromisoformat(payload['to']).date()
-    except KeyError as e:
-        return JsonResponse({'error': f'Отсутствует обязательное поле: {e.args[0]}'}, status=400)
-    except ValueError as e:
-        return JsonResponse({'error': f'Ошибка разбора даты/ид: {e}'}, status=400)
-
-    opening_raw = payload.get('opening_balance')
-
-    account = get_object_or_404(Account, pk=account_id)
-    txs = Transaction.objects.filter(account_id=account_id, date__gte=start, date__lte=end).order_by('date', 'id')
-    if opening_raw is not None:
-        try:
-            opening_balance = float(opening_raw)
-        except (TypeError, ValueError):
-            return JsonResponse({'error': 'Ошибка разбора opening_balance'}, status=400)
-    else:
-        opening_tx = Transaction.objects.filter(account_id=account_id, date__lt=start).order_by('-date', '-id').first()
-        opening_balance = float(opening_tx.balance) if opening_tx else 0.0
-
-    statement = Statement.objects.create(
-        account=account,
-        period_start=start,
-        period_end=end,
-        generated_by=request.user.username,
-    )
-    for t in txs:
-        StatementTransaction.objects.create(statement=statement, transaction=t, running_balance=t.balance)
-
-    stmt_data = StatementData(
-        statement=statement,
-        account=account,
-        transactions=txs,
         opening_balance=opening_balance,
     )
     pdf_bytes = generate_statement_pdf(stmt_data)
     pdf_file = STATEMENTS_DIR / f'statement_{statement.id}.pdf'
     pdf_file.write_bytes(pdf_bytes)
+
     return JsonResponse({'id': statement.id})
 
 
 @login_required
 def statement_meta(request, statement_id: int):
-    stmt = get_object_or_404(Statement, pk=statement_id)
+    stmt = get_object_or_404(Statement, pk=statement_id, generated_by=request.user.username)
+    payload = stmt.data or {}
     return JsonResponse({
         'id': stmt.id,
-        'account_id': stmt.account_id,
-        'period_start': stmt.period_start.isoformat(),
-        'period_end': stmt.period_end.isoformat(),
-        'generated_at': stmt.created_at.isoformat(),
-        'generated_by': stmt.generated_by,
+        'bank': payload.get('bank', 'BSPB'),
+        'account': payload.get('account', stmt.account.number if stmt.account else ''),
+        'fio': payload.get('fio', ''),
+        'from': stmt.period_start.isoformat(),
+        'to': stmt.period_end.isoformat(),
+        'opening_balance': payload.get('opening_balance', 0),
+        'operations': payload.get('operations', []),
     })
 
 
@@ -219,18 +189,18 @@ def statement_pdf(request, statement_id: int):
 def list_statements_meta(request):
     stmts = (
         Statement.objects.filter(generated_by=request.user.username)
-        .select_related('account', 'account__user')
         .order_by('-created_at')
     )
-    data = [
-        {
+    data = []
+    for s in stmts:
+        payload = s.data or {}
+        data.append({
             'id': s.id,
-            'account_number': s.account.number,
-            'owner': s.account.user.username if s.account.user else '',
+            'account_number': payload.get('account', s.account.number if s.account else ''),
+            'owner': payload.get('fio', s.account.user.username if s.account and s.account.user else ''),
             'period_start': s.period_start.isoformat(),
             'period_end': s.period_end.isoformat(),
+            'status': payload.get('status'),
             'generated_at': s.created_at.isoformat(),
-        }
-        for s in stmts
-    ]
+        })
     return JsonResponse(data, safe=False)
