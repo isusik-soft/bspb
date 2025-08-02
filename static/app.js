@@ -34,8 +34,7 @@ document.getElementById('generateForm').addEventListener('submit', async functio
   const payload = {
     account_id: parseInt(document.getElementById('accountSelect').value, 10),
     from: document.getElementById('dbStart').value,
-    to: document.getElementById('dbEnd').value,
-    user: 'web'
+    to: document.getElementById('dbEnd').value
   };
   const resp = await fetch('/statement/generate', {
     method: 'POST',
