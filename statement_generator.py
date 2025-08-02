@@ -64,6 +64,22 @@ def render_pdf(html: str, template_pdf: Optional[Path] = None) -> bytes:
         bg_page = reader_bg.pages[min(i, len(reader_bg.pages) - 1)]
         bg_page.merge_page(page)
         writer.add_page(bg_page)
+
+    # copy metadata from template and override creation date
+    metadata = {}
+    if reader_bg.metadata:
+        metadata = {
+            k: v
+            for k, v in reader_bg.metadata.items()
+            if isinstance(k, str) and isinstance(v, str)
+        }
+    now = datetime.now().astimezone()
+    offset = now.strftime("%z")
+    if offset:
+        offset = f"{offset[:3]}'{offset[3:]}'"
+    metadata["/CreationDate"] = now.strftime(f"D:%Y%m%d%H%M%S{offset}")
+    writer.add_metadata(metadata)
+
     buffer = BytesIO()
     writer.write(buffer)
     return buffer.getvalue()
