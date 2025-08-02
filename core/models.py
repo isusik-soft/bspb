@@ -42,3 +42,22 @@ class StatementTransaction(models.Model):
 
     def __str__(self):
         return f"Entry {self.id}"
+
+
+class Template(models.Model):
+    FIELD_COUNTERPARTY = 'counterparty'
+    FIELD_DESCRIPTION = 'description'
+    FIELD_CHOICES = [
+        (FIELD_COUNTERPARTY, 'Counterparty'),
+        (FIELD_DESCRIPTION, 'Description'),
+    ]
+
+    user = models.ForeignKey(User, related_name='templates', on_delete=models.CASCADE)
+    field = models.CharField(max_length=32, choices=FIELD_CHOICES)
+    text = models.CharField(max_length=255)
+
+    class Meta:
+        unique_together = ('user', 'field', 'text')
+
+    def __str__(self):
+        return self.text
