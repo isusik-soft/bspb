@@ -1,35 +1,34 @@
+import os
+os.environ.setdefault('DJANGO_SETTINGS_MODULE', 'bspb_site.settings')
+import django
+django.setup()
+
 from datetime import date, timedelta
 from decimal import Decimal
-
-from database import init_db
-from models import Account, Transaction, User
-
-SessionLocal = init_db("sqlite:///bspb.db")
+from django.contrib.auth.models import User
+from core.models import Account, Transaction
 
 
 def main():
-    with SessionLocal() as db:
-        user = User(username="demo", password_hash="demo")
-        db.add(user)
-        db.flush()
-        account = Account(number="40817810000000000001", user_id=user.id)
-        db.add(account)
-        db.flush()
-        balance = Decimal("10000.00")
-        for i in range(10):
-            amount = Decimal("1000.00")
-            balance -= amount
-            tx = Transaction(
-                account_id=account.id,
-                date=date(2024, 1, 1) + timedelta(days=i * 3),
-                counterparty=f"Контрагент {i}",
-                description=f"Покупка №{i}",
-                amount=-amount,
-                balance=balance,
-            )
-            db.add(tx)
-        db.commit()
+    User.objects.all().delete()
+    Account.objects.all().delete()
+    Transaction.objects.all().delete()
+
+    user = User.objects.create_user(username='demo', password='demo')
+    account = Account.objects.create(number='40817810000000000001', user=user)
+    balance = Decimal('10000.00')
+    for i in range(10):
+        amount = Decimal('1000.00')
+        balance -= amount
+        Transaction.objects.create(
+            account=account,
+            date=date(2024, 1, 1) + timedelta(days=i * 3),
+            counterparty=f'Контрагент {i}',
+            description=f'Покупка №{i}',
+            amount=-amount,
+            balance=balance,
+        )
 
 
-if __name__ == "__main__":
+if __name__ == '__main__':
     main()

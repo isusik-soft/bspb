@@ -14,6 +14,7 @@
   const startInput = document.getElementById('periodStart');
   const endInput = document.getElementById('periodEnd');
   const openingInput = document.getElementById('openingBalance');
+  const bankSelect = document.getElementById('bankSelect');
   const incomingEl = document.getElementById('totalIncoming');
   const outgoingEl = document.getElementById('totalOutgoing');
   const closingEl = document.getElementById('closingBalance');
@@ -35,7 +36,10 @@
     updateTotals();
   }
 
-  newBtn.addEventListener('click', showEditor);
+  newBtn.addEventListener('click', () => {
+    localStorage.removeItem('statementDraft');
+    showEditor();
+  });
   backBtn.addEventListener('click', showDashboard);
 
   searchInput.addEventListener('input', () => {
@@ -110,6 +114,7 @@
   function gatherData() {
     const operations = Array.from(opsBody.querySelectorAll('tr')).map(tr => getRowData(tr));
     return {
+      bank: bankSelect.value,
       account: accountInput.value.trim(),
       fio: ownerInput.value.trim(),
       from: startInput.value,
@@ -142,6 +147,7 @@
   ownerInput.addEventListener('input', saveDraftDebounced);
   startInput.addEventListener('input', saveDraftDebounced);
   endInput.addEventListener('input', saveDraftDebounced);
+  bankSelect.addEventListener('input', saveDraftDebounced);
 
   addOpBtn.addEventListener('click', () => {
     addOperation();
@@ -168,6 +174,7 @@
     if (raw) {
       try {
         const data = JSON.parse(raw);
+        bankSelect.value = data.bank || 'BSPB';
         accountInput.value = data.account || '';
         ownerInput.value = data.fio || '';
         startInput.value = data.from || '';
@@ -187,6 +194,7 @@
   pdfBtn.addEventListener('click', async () => {
     const data = gatherData();
     const payload = {
+      bank: data.bank,
       fio: data.fio,
       account: data.account,
       from: data.from,

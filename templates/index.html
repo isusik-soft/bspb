@@ -3,7 +3,8 @@
 <head>
   <meta charset="UTF-8">
   <title>Выписки</title>
-  <link rel="stylesheet" href="{{ url_for('static', filename='bootstrap.min.css') }}">
+  {% load static %}
+  <link rel="stylesheet" href="{% static 'bootstrap.min.css' %}">
 </head>
 <body>
 <div class="container my-4">
@@ -11,7 +12,10 @@
   <div id="dashboard">
     <div class="d-flex justify-content-between align-items-center mb-3">
       <h1 class="mb-0">Выписки</h1>
-      <button id="newStatementBtn" class="btn btn-primary">Новая выписка</button>
+      <div class="d-flex align-items-center gap-2">
+        <a href="{% url 'logout' %}" class="btn btn-outline-secondary">Выход</a>
+        <button id="newStatementBtn" class="btn btn-primary">Новая выписка</button>
+      </div>
     </div>
     <div class="mb-3">
       <input id="searchInput" class="form-control" placeholder="Поиск по счёту или ФИО">
@@ -36,6 +40,15 @@
   <div id="editor" class="d-none">
     <button id="backToDashboard" class="btn btn-link mb-3">&larr; Назад</button>
     <h2 class="mb-3">Создание выписки</h2>
+    <div class="row g-3 mb-3">
+      <div class="col-md-4">
+        <label class="form-label">Банк</label>
+        <select id="bankSelect" class="form-select">
+          <option value="BSPB">Банк Санкт-Петербург</option>
+          <option value="Other">Другой банк</option>
+        </select>
+      </div>
+    </div>
     <div class="row g-3 mb-3">
       <div class="col-md-4">
         <label class="form-label">Счёт</label>
@@ -90,7 +103,7 @@
     <div id="saveStatus" class="mt-2 text-muted"></div>
   </div>
 </div>
-<script src="{{ url_for('static', filename='ui.js') }}"></script>
+<script src="{% static 'ui.js' %}"></script>
 </body>
 </html>
 
