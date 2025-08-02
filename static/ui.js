@@ -114,7 +114,6 @@
       fio: ownerInput.value.trim(),
       from: startInput.value,
       to: endInput.value,
-      // Нормализуем так же, как суммы операций
       opening_balance: getNumber(openingInput),
       operations
     };
