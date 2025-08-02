@@ -139,7 +139,8 @@ def statement_custom():
         account_number = payload["account"]
         start = datetime.fromisoformat(payload["from"]).date()
         end = datetime.fromisoformat(payload["to"]).date()
-        opening_balance = float(payload.get("opening_balance", 0))
+        opening_raw = payload.get("opening_balance")
+        opening_balance = float(opening_raw) if opening_raw is not None else None
         ops = payload.get("operations", [])
     except KeyError as e:
         return jsonify({"error": f"Отсутствует поле: {e.args[0]}"}), 400
@@ -150,7 +151,7 @@ def statement_custom():
     account = SimpleAccount(number=account_number, user=user)
     statement = SimpleStatement(period_start=start, period_end=end)
 
-    running_balance = opening_balance
+    running_balance = opening_balance if opening_balance is not None else 0
     transactions: list[SimpleTransaction] = []
     for op in ops:
         try:
@@ -217,6 +218,14 @@ def generate_statement():
             .order_by(Transaction.date, Transaction.id)
             .all()
         )
+        opening_tx = (
+            db.query(Transaction)
+            .filter(Transaction.account_id == account_id)
+            .filter(Transaction.date < start)
+            .order_by(Transaction.date.desc(), Transaction.id.desc())
+            .first()
+        )
+        opening_balance = float(opening_tx.balance) if opening_tx else 0.0
         statement = Statement(
             account_id=account.id,
             period_start=start,
@@ -224,19 +233,22 @@ def generate_statement():
             generated_by=user,
         )
         db.add(statement)
-        running_balance = 0
         for t in txs:
-            running_balance = t.balance
             db.add(
                 StatementTransaction(
                     statement=statement,
                     transaction=t,
-                    running_balance=running_balance,
+                    running_balance=t.balance,
                 )
             )
         db.commit()
 
-        stmt_data = StatementData(statement=statement, account=account, transactions=txs)
+        stmt_data = StatementData(
+            statement=statement,
+            account=account,
+            transactions=txs,
+            opening_balance=opening_balance,
+        )
         pdf_bytes = generate_statement_pdf(stmt_data)
 
         pdf_file = STATEMENTS_DIR / f"statement_{statement.id}.pdf"
