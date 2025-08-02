@@ -178,10 +178,9 @@
         const created = new Date(st.generated_at).toLocaleString('ru-RU');
         tr.innerHTML =
           `<td>${st.id}</td>` +
-          `<td>${st.account_number}</td>` +
           `<td>${st.owner || ''}</td>` +
           `<td>${period}</td>` +
-          `<td>${st.status || 'сгенерирована'}</td>` +
+          `<td>${st.bank || ''}</td>` +
           `<td>${created}</td>` +
           `<td><a class=\"btn btn-sm btn-outline-secondary\" href=\"/statement/${st.id}.pdf\" target=\"_blank\">PDF</a></td>`;
         tr.addEventListener('click', () => loadStatement(st.id));
