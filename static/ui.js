@@ -114,7 +114,8 @@
       fio: ownerInput.value.trim(),
       from: startInput.value,
       to: endInput.value,
-      opening_balance: getNumber(openingInput),
+      // Передаём исходную строку, чтобы сервер сам разобрал формат числа
+      opening_balance: openingInput.value.trim(),
       operations
     };
   }
