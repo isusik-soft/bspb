@@ -139,17 +139,18 @@ def statement_custom():
         account_number = payload["account"]
         start = datetime.fromisoformat(payload["from"]).date()
         end = datetime.fromisoformat(payload["to"]).date()
+        opening_balance = float(payload.get("opening_balance", 0))
         ops = payload.get("operations", [])
     except KeyError as e:
         return jsonify({"error": f"Отсутствует поле: {e.args[0]}"}), 400
     except ValueError as e:
-        return jsonify({"error": f"Ошибка разбора даты: {e}"}), 400
+        return jsonify({"error": f"Ошибка разбора даты/суммы: {e}"}), 400
 
     user = SimpleUser(username=fio)
     account = SimpleAccount(number=account_number, user=user)
     statement = SimpleStatement(period_start=start, period_end=end)
 
-    running_balance = 0.0
+    running_balance = opening_balance
     transactions: list[SimpleTransaction] = []
     for op in ops:
         try:
@@ -172,7 +173,12 @@ def statement_custom():
             )
         )
 
-    stmt_data = StatementData(statement=statement, account=account, transactions=transactions)
+    stmt_data = StatementData(
+        statement=statement,
+        account=account,
+        transactions=transactions,
+        opening_balance=opening_balance,
+    )
     pdf_bytes = generate_statement_pdf(stmt_data)
 
     return send_file(

@@ -185,6 +185,7 @@
       account: data.account,
       from: data.from,
       to: data.to,
+      opening_balance: data.opening_balance,
       operations: data.operations
     };
     const resp = await fetch('/statement/custom', {
