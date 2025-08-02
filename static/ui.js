@@ -178,10 +178,9 @@
         const created = new Date(st.generated_at).toLocaleString('ru-RU');
         tr.innerHTML =
           `<td>${st.id}</td>` +
-          `<td>${st.account_number}</td>` +
           `<td>${st.owner || ''}</td>` +
           `<td>${period}</td>` +
-          `<td>${st.status || 'сгенерирована'}</td>` +
+          `<td>${st.bank || ''}</td>` +
           `<td>${created}</td>` +
           `<td class=\"d-flex gap-1\">` +
             `<button type=\"button\" class=\"btn btn-sm btn-outline-primary edit-btn\" data-id=\"${st.id}\">Редактировать</button>` +

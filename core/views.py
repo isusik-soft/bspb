@@ -196,11 +196,10 @@ def list_statements_meta(request):
         payload = s.data or {}
         data.append({
             'id': s.id,
-            'account_number': payload.get('account', s.account.number if s.account else ''),
             'owner': payload.get('fio', s.account.user.username if s.account and s.account.user else ''),
             'period_start': s.period_start.isoformat(),
             'period_end': s.period_end.isoformat(),
-            'status': payload.get('status'),
+            'bank': payload.get('bank', 'BSPB'),
             'generated_at': s.created_at.isoformat(),
         })
     return JsonResponse(data, safe=False)
