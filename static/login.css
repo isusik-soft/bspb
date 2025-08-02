@@ -1,0 +1,14 @@
+body.login-bg {
+  background: linear-gradient(135deg, #f0f4ff, #d9e4f5);
+  min-height: 100vh;
+}
+.login-card {
+  width: 100%;
+  max-width: 380px;
+  border: none;
+  border-radius: 0.75rem;
+}
+.login-logo {
+  width: 64px;
+  height: auto;
+}
