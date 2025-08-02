@@ -102,7 +102,7 @@
     saveTemplates(currentTemplateField, templates);
     renderTemplateList();
     templateSelect.value = newIndex;
-    templateText.value = '';
+    templateSelect.dispatchEvent(new Event('change'));
   });
 
   templateDeleteBtn.addEventListener('click', () => {
