@@ -4,6 +4,7 @@ import os
 from datetime import date, datetime
 from pathlib import Path
 from typing import Optional
+import re
 
 from flask import Flask, abort, jsonify, request, send_file, render_template
 from sqlalchemy.orm import Session
@@ -81,7 +82,7 @@ def parse_amount(value):
     if value is None:
         return None
     if isinstance(value, str):
-        value = value.replace(" ", "").replace(",", ".")
+        value = re.sub(r"\s+", "", value).replace(",", ".")
     return float(value)
 
 
