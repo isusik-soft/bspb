@@ -183,8 +183,14 @@
           `<td>${period}</td>` +
           `<td>${st.status || 'сгенерирована'}</td>` +
           `<td>${created}</td>` +
-          `<td><a class=\"btn btn-sm btn-outline-secondary\" href=\"/statement/${st.id}.pdf\" target=\"_blank\">PDF</a></td>`;
-        tr.addEventListener('click', () => loadStatement(st.id));
+          `<td class=\"d-flex gap-1\">` +
+            `<button type=\"button\" class=\"btn btn-sm btn-outline-primary edit-btn\" data-id=\"${st.id}\">Редактировать</button>` +
+            `<a class=\"btn btn-sm btn-outline-secondary\" href=\"/statement/${st.id}.pdf\" target=\"_blank\">PDF</a>` +
+          `</td>`;
+        tr.querySelector('.edit-btn').addEventListener('click', (e) => {
+          e.stopPropagation();
+          loadStatement(st.id);
+        });
         statementsBody.appendChild(tr);
       });
     });
