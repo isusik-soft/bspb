@@ -21,6 +21,114 @@
   const opsBody = document.querySelector('#operationsTable tbody');
   const searchInput = document.getElementById('searchInput');
 
+  // Templates
+  const templateModal = document.getElementById('templateModal');
+  const templateTitle = document.getElementById('templateTitle');
+  const templateSelect = document.getElementById('templateSelect');
+  const templateText = document.getElementById('templateText');
+  const templateUseBtn = document.getElementById('templateUse');
+  const templateSaveBtn = document.getElementById('templateSaveBtn');
+  const templateDeleteBtn = document.getElementById('templateDelete');
+  const templateCloseBtn = document.getElementById('templateClose');
+
+  const TEMPLATE_KEYS = {
+    counterparty: 'templates_counterparty',
+    description: 'templates_description'
+  };
+
+  let currentTemplateField = null;
+  let currentTemplateInput = null;
+
+  function loadTemplates(field) {
+    const raw = localStorage.getItem(TEMPLATE_KEYS[field]);
+    return raw ? JSON.parse(raw) : [];
+  }
+
+  function saveTemplates(field, arr) {
+    localStorage.setItem(TEMPLATE_KEYS[field], JSON.stringify(arr));
+  }
+
+  function renderTemplateList() {
+    if (!currentTemplateField) return;
+    const templates = loadTemplates(currentTemplateField);
+    templateSelect.innerHTML = '';
+    templates.forEach((t, i) => {
+      const opt = document.createElement('option');
+      opt.value = i;
+      opt.textContent = t;
+      templateSelect.appendChild(opt);
+    });
+  }
+
+  function openTemplateModal(field, inputEl) {
+    currentTemplateField = field;
+    currentTemplateInput = inputEl;
+    templateTitle.textContent = field === 'counterparty'
+      ? 'Шаблоны: Плательщик / Получатель'
+      : 'Шаблоны: Операция';
+    templateText.value = '';
+    renderTemplateList();
+    templateModal.classList.remove('d-none');
+  }
+
+  function closeTemplateModal() {
+    templateModal.classList.add('d-none');
+    currentTemplateField = null;
+    currentTemplateInput = null;
+    templateText.value = '';
+  }
+
+  templateCloseBtn.addEventListener('click', closeTemplateModal);
+
+  templateSelect.addEventListener('change', () => {
+    const idx = templateSelect.value;
+    const templates = loadTemplates(currentTemplateField);
+    templateText.value = templates[idx] || '';
+  });
+
+  templateSaveBtn.addEventListener('click', () => {
+    if (!currentTemplateField) return;
+    const text = templateText.value.trim();
+    if (!text) return;
+    const templates = loadTemplates(currentTemplateField);
+    const idx = templateSelect.value;
+    let newIndex = idx;
+    if (idx !== '' && templates[idx] !== undefined) {
+      templates[idx] = text;
+    } else {
+      templates.push(text);
+      newIndex = templates.length - 1;
+    }
+    saveTemplates(currentTemplateField, templates);
+    renderTemplateList();
+    templateSelect.value = newIndex;
+    templateText.value = '';
+  });
+
+  templateDeleteBtn.addEventListener('click', () => {
+    if (!currentTemplateField) return;
+    const idx = templateSelect.value;
+    if (idx === '') return;
+    const templates = loadTemplates(currentTemplateField);
+    templates.splice(idx, 1);
+    saveTemplates(currentTemplateField, templates);
+    renderTemplateList();
+    templateSelect.value = '';
+    templateText.value = '';
+  });
+
+  templateUseBtn.addEventListener('click', () => {
+    if (!currentTemplateField || !currentTemplateInput) return;
+    const idx = templateSelect.value;
+    const templates = loadTemplates(currentTemplateField);
+    const value = idx !== '' ? templates[idx] : templateText.value.trim();
+    if (value) {
+      currentTemplateInput.value = value;
+      currentTemplateInput.dispatchEvent(new Event('input'));
+    }
+    closeTemplateModal();
+  });
+
   let saveTimeout = null;
 
   function showDashboard() {
@@ -74,8 +182,18 @@
     const amountValue = op.amount != null ? op.amount : '';
     tr.innerHTML = `
       <td><input type="date" class="form-control form-control-sm op-date" value="${op.date || ''}"></td>
-      <td><input type="text" class="form-control form-control-sm op-counterparty" value="${op.counterparty || ''}"></td>
-      <td><input type="text" class="form-control form-control-sm op-description" value="${op.description || ''}"></td>
+      <td>
+        <div class="input-group input-group-sm">
+          <input type="text" class="form-control op-counterparty" value="${op.counterparty || ''}">
+          <button type="button" class="btn btn-outline-secondary template-btn" data-field="counterparty">+</button>
+        </div>
+      </td>
+      <td>
+        <div class="input-group input-group-sm">
+          <input type="text" class="form-control op-description" value="${op.description || ''}">
+          <button type="button" class="btn btn-outline-secondary template-btn" data-field="description">+</button>
+        </div>
+      </td>
       <td><input type="number" step="0.01" class="form-control form-control-sm op-amount" value="${amountValue}"></td>
       <td class="text-nowrap">
         <button class="btn btn-sm btn-outline-secondary duplicate" title="Дублировать">⧉</button>
@@ -85,6 +203,14 @@
 
     const inputs = tr.querySelectorAll('input');
     inputs.forEach(inp => inp.addEventListener('input', updateTotalsAndSave));
+
+    tr.querySelectorAll('.template-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        const field = btn.dataset.field;
+        const inputEl = btn.parentElement.querySelector('input');
+        openTemplateModal(field, inputEl);
+      });
+    });
 
     tr.querySelector('.delete').addEventListener('click', () => {
       tr.remove();

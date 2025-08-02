@@ -104,6 +104,22 @@
     <div id="saveStatus" class="mt-2 text-muted"></div>
   </div>
 </div>
+
+<div id="templateModal" class="modal d-none">
+  <div class="modal-dialog">
+    <div class="modal-content p-3">
+      <h5 id="templateTitle" class="mb-2">Шаблоны</h5>
+      <select id="templateSelect" class="form-select mb-2" size="5"></select>
+      <input type="text" id="templateText" class="form-control mb-2" placeholder="Новый шаблон">
+      <div class="d-flex justify-content-end gap-2">
+        <button id="templateUse" class="btn btn-primary btn-sm">Выбрать</button>
+        <button id="templateSaveBtn" class="btn btn-secondary btn-sm">Сохранить</button>
+        <button id="templateDelete" class="btn btn-outline-danger btn-sm">Удалить</button>
+        <button id="templateClose" class="btn btn-outline-secondary btn-sm">Закрыть</button>
+      </div>
+    </div>
+  </div>
+</div>
 <script src="{% static 'ui.js' %}"></script>
 </body>
 </html>
