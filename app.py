@@ -214,6 +214,7 @@ def generate_statement():
         return jsonify({"error": f"Ошибка разбора даты/ид: {e}"}), 400
 
     user = payload.get("user", "system")
+    opening_raw = payload.get("opening_balance")
 
     with SessionLocal() as db:
         account = db.get(Account, account_id)
@@ -226,14 +227,20 @@ def generate_statement():
             .order_by(Transaction.date, Transaction.id)
             .all()
         )
-        opening_tx = (
-            db.query(Transaction)
-            .filter(Transaction.account_id == account_id)
-            .filter(Transaction.date < start)
-            .order_by(Transaction.date.desc(), Transaction.id.desc())
-            .first()
-        )
-        opening_balance = float(opening_tx.balance) if opening_tx else 0.0
+        if opening_raw is not None:
+            try:
+                opening_balance = float(opening_raw)
+            except (TypeError, ValueError):
+                return jsonify({"error": "Ошибка разбора opening_balance"}), 400
+        else:
+            opening_tx = (
+                db.query(Transaction)
+                .filter(Transaction.account_id == account_id)
+                .filter(Transaction.date < start)
+                .order_by(Transaction.date.desc(), Transaction.id.desc())
+                .first()
+            )
+            opening_balance = float(opening_tx.balance) if opening_tx else 0.0
         statement = Statement(
             account_id=account.id,
             period_start=start,
