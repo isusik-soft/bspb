@@ -5,3 +5,4 @@ WeasyPrint>=66.0
 PyPDF2>=3.0.1
 psycopg2-binary>=2.9.9
 gunicorn>=20
+whitenoise>=6.0
