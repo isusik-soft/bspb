@@ -160,7 +160,6 @@ def generate_statement(request):
     except ValueError as e:
         return JsonResponse({'error': f'Ошибка разбора даты/ид: {e}'}, status=400)
 
-    user = payload.get('user', 'system')
     opening_raw = payload.get('opening_balance')
 
     account = get_object_or_404(Account, pk=account_id)
@@ -178,7 +177,7 @@ def generate_statement(request):
         account=account,
         period_start=start,
         period_end=end,
-        generated_by=user,
+        generated_by=request.user.username,
     )
     for t in txs:
         StatementTransaction.objects.create(statement=statement, transaction=t, running_balance=t.balance)
@@ -218,7 +217,11 @@ def statement_pdf(request, statement_id: int):
 
 @login_required
 def list_statements_meta(request):
-    stmts = Statement.objects.select_related('account', 'account__user').order_by('-created_at')
+    stmts = (
+        Statement.objects.filter(generated_by=request.user.username)
+        .select_related('account', 'account__user')
+        .order_by('-created_at')
+    )
     data = [
         {
             'id': s.id,
