@@ -109,7 +109,8 @@ def generate_statement_pdf(data: StatementData, template_pdf: Optional[Path] = N
         opening_balance = txs[0].balance - txs[0].amount if txs else 0
     closing_balance = txs[-1].balance if txs else opening_balance
     total_incoming = sum(t.amount for t in txs if t.amount > 0)
-    total_outgoing = -sum(t.amount for t in txs if t.amount < 0)
+    # keep outgoing totals negative so the PDF displays the minus sign
+    total_outgoing = sum(t.amount for t in txs if t.amount < 0)
 
     template = env.get_template("statement.html")
     html = template.render(
