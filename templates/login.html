@@ -5,25 +5,31 @@
   <title>Вход</title>
   {% load static %}
   <link rel="stylesheet" href="{% static 'bootstrap.min.css' %}">
+  <link rel="stylesheet" href="{% static 'login.css' %}">
 </head>
-<body>
-<div class="container my-5" style="max-width: 400px;">
-  <h1 class="h3 mb-3 text-center">Вход</h1>
-  {% if error %}
-  <div class="alert alert-danger">{{ error }}</div>
-  {% endif %}
-  <form method="post">
-    {% csrf_token %}
-    <div class="mb-3">
-      <label class="form-label">Имя пользователя</label>
-      <input type="text" name="username" class="form-control" required>
+<body class="login-bg d-flex justify-content-center align-items-center">
+<div class="card login-card shadow-sm">
+  <div class="card-body">
+    <div class="text-center mb-4">
+      <img src="{% static 'logo.png' %}" alt="Логотип" class="login-logo">
     </div>
-    <div class="mb-3">
-      <label class="form-label">Пароль</label>
-      <input type="password" name="password" class="form-control" required>
-    </div>
-    <button type="submit" class="btn btn-primary w-100">Войти</button>
-  </form>
+    <h1 class="h4 mb-3 text-center">Вход</h1>
+    {% if error %}
+    <div class="alert alert-danger">{{ error }}</div>
+    {% endif %}
+    <form method="post">
+      {% csrf_token %}
+      <div class="mb-3">
+        <label class="form-label">Имя пользователя</label>
+        <input type="text" name="username" class="form-control" required>
+      </div>
+      <div class="mb-3">
+        <label class="form-label">Пароль</label>
+        <input type="password" name="password" class="form-control" required>
+      </div>
+      <button type="submit" class="btn btn-primary w-100">Войти</button>
+    </form>
+  </div>
 </div>
 </body>
 </html>
