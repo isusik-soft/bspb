@@ -29,6 +29,7 @@ class Statement(models.Model):
     period_end = models.DateField()
     created_at = models.DateTimeField(auto_now_add=True)
     generated_by = models.CharField(max_length=255, blank=True, null=True)
+    data = models.JSONField(null=True, blank=True)
 
     def __str__(self):
         return f"Statement {self.id}"

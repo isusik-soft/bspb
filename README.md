@@ -17,10 +17,10 @@
    ```bash
    python app.py
    ```
-4. Сгенерируйте выписку:
+4. Сохраните и сгенерируйте выписку:
    ```bash
-   curl -X POST http://localhost:5000/statement/generate -H 'Content-Type: application/json' \
-        -d '{"account_id":1,"from":"2024-01-01","to":"2024-02-01"}'
+   curl -X POST http://localhost:5000/statement/custom -H 'Content-Type: application/json' \
+        -d '{"fio":"Иванов И.И.","account":"123","from":"2024-01-01","to":"2024-02-01","opening_balance":0,"operations":[]}'
    ```
 
 Готовый файл появится в каталоге `statements/`.

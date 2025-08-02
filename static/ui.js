@@ -21,7 +21,7 @@
   const opsBody = document.querySelector('#operationsTable tbody');
   const searchInput = document.getElementById('searchInput');
 
-  let saveTimeout = null;
+  let currentId = null;
 
   function showDashboard() {
     editor.classList.add('d-none');
@@ -29,15 +29,27 @@
     refreshStatements();
   }
 
+  function clearForm() {
+    bankSelect.value = 'BSPB';
+    accountInput.value = '';
+    ownerInput.value = '';
+    startInput.value = '';
+    endInput.value = '';
+    openingInput.value = 0;
+    opsBody.innerHTML = '';
+    addOperation();
+    updateTotals();
+    saveStatus.textContent = '';
+  }
+
   function showEditor() {
     dashboard.classList.add('d-none');
     editor.classList.remove('d-none');
-    loadDraft();
-    updateTotals();
   }
 
   newBtn.addEventListener('click', () => {
-    localStorage.removeItem('statementDraft');
+    currentId = null;
+    clearForm();
     showEditor();
   });
   backBtn.addEventListener('click', showDashboard);
@@ -63,7 +75,8 @@
           `<td>${period}</td>` +
           `<td>${st.status || 'сгенерирована'}</td>` +
           `<td>${created}</td>` +
-          `<td><a class="btn btn-sm btn-outline-secondary" href="/statement/${st.id}.pdf" target="_blank">PDF</a></td>`;
+          `<td><a class=\"btn btn-sm btn-outline-secondary\" href=\"/statement/${st.id}.pdf\" target=\"_blank\">PDF</a></td>`;
+        tr.addEventListener('click', () => loadStatement(st.id));
         statementsBody.appendChild(tr);
       });
     });
@@ -84,16 +97,18 @@
     opsBody.appendChild(tr);
 
     const inputs = tr.querySelectorAll('input');
-    inputs.forEach(inp => inp.addEventListener('input', updateTotalsAndSave));
+    inputs.forEach(inp => inp.addEventListener('input', () => { saveStatus.textContent = ''; updateTotals(); }));
 
     tr.querySelector('.delete').addEventListener('click', () => {
       tr.remove();
-      updateTotalsAndSave();
+      saveStatus.textContent = '';
+      updateTotals();
     });
     tr.querySelector('.duplicate').addEventListener('click', () => {
       const data = getRowData(tr);
       addOperation(data);
-      updateTotalsAndSave();
+      saveStatus.textContent = '';
+      updateTotals();
     });
   }
 
@@ -115,6 +130,7 @@
   function gatherData() {
     const operations = Array.from(opsBody.querySelectorAll('tr')).map(tr => getRowData(tr));
     return {
+      id: currentId,
       bank: bankSelect.value,
       account: accountInput.value.trim(),
       fio: ownerInput.value.trim(),
@@ -138,91 +154,62 @@
     closingEl.textContent = closing.toFixed(2);
   }
 
-  function updateTotalsAndSave() {
-    updateTotals();
-    saveDraftDebounced();
-  }
-
-  openingInput.addEventListener('input', updateTotalsAndSave);
-  accountInput.addEventListener('input', saveDraftDebounced);
-  ownerInput.addEventListener('input', saveDraftDebounced);
-  startInput.addEventListener('input', saveDraftDebounced);
-  endInput.addEventListener('input', saveDraftDebounced);
-  bankSelect.addEventListener('input', saveDraftDebounced);
+  openingInput.addEventListener('input', () => { saveStatus.textContent = ''; updateTotals(); });
+  accountInput.addEventListener('input', () => { saveStatus.textContent = ''; });
+  ownerInput.addEventListener('input', () => { saveStatus.textContent = ''; });
+  startInput.addEventListener('input', () => { saveStatus.textContent = ''; });
+  endInput.addEventListener('input', () => { saveStatus.textContent = ''; });
+  bankSelect.addEventListener('input', () => { saveStatus.textContent = ''; });
 
   addOpBtn.addEventListener('click', () => {
     addOperation();
-    saveDraftDebounced();
+    saveStatus.textContent = '';
+    updateTotals();
   });
 
-  function saveDraft() {
-    const data = gatherData();
-    localStorage.setItem('statementDraft', JSON.stringify(data));
-    saveStatus.textContent = 'Сохранено';
-  }
-
-  function saveDraftDebounced() {
-    saveStatus.textContent = 'Сохранение...';
-    clearTimeout(saveTimeout);
-    saveTimeout = setTimeout(saveDraft, 1500);
-  }
-
-  saveBtn.addEventListener('click', saveDraft);
-
-  function loadDraft() {
-    const raw = localStorage.getItem('statementDraft');
-    opsBody.innerHTML = '';
-    if (raw) {
-      try {
-        const data = JSON.parse(raw);
-        bankSelect.value = data.bank || 'BSPB';
-        accountInput.value = data.account || '';
-        ownerInput.value = data.fio || '';
-        startInput.value = data.from || '';
-        endInput.value = data.to || '';
-        openingInput.value = data.opening_balance != null ? data.opening_balance : 0;
-        (data.operations || []).forEach(addOperation);
-      } catch (e) {
-        addOperation();
-      }
-    } else {
-      addOperation();
-    }
-    updateTotals();
-    saveStatus.textContent = '';
-  }
-
-  pdfBtn.addEventListener('click', async () => {
-    const data = gatherData();
-    const payload = {
-      bank: data.bank,
-      fio: data.fio,
-      account: data.account,
-      from: data.from,
-      to: data.to,
-      opening_balance: data.opening_balance,
-      operations: data.operations
-    };
+  async function saveStatement() {
+    const payload = gatherData();
     const resp = await fetch('/statement/custom', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(payload)
     });
     if (!resp.ok) {
-      alert('Ошибка генерации');
-      return;
+      alert('Ошибка сохранения');
+      return null;
     }
-    const blob = await resp.blob();
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'statement.pdf';
-    document.body.appendChild(a);
-    a.click();
-    a.remove();
-    URL.revokeObjectURL(url);
+    const data = await resp.json();
+    currentId = data.id;
+    saveStatus.textContent = 'Сохранено';
+    refreshStatements();
+    return currentId;
+  }
+
+  saveBtn.addEventListener('click', saveStatement);
+
+  pdfBtn.addEventListener('click', async () => {
+    const id = await saveStatement();
+    if (!id) return;
+    window.open(`/statement/${id}.pdf`, '_blank');
   });
+
+  async function loadStatement(id) {
+    const resp = await fetch(`/statement/${id}`);
+    if (!resp.ok) return;
+    const data = await resp.json();
+    currentId = data.id;
+    bankSelect.value = data.bank || 'BSPB';
+    accountInput.value = data.account || '';
+    ownerInput.value = data.fio || '';
+    startInput.value = data.from || '';
+    endInput.value = data.to || '';
+    openingInput.value = data.opening_balance != null ? data.opening_balance : 0;
+    opsBody.innerHTML = '';
+    (data.operations || []).forEach(addOperation);
+    updateTotals();
+    saveStatus.textContent = '';
+    showEditor();
+  }
 
   refreshStatements();
 })();
-
