@@ -35,6 +35,24 @@ div.page{
 p{position:absolute;white-space:pre;margin:0;}
 h1{position:absolute;top:22pt;left:20pt;font-size:16pt;font-weight:bold;margin:0;}
 img.logo{position:absolute;top:20pt;right:20pt;height:32pt;}
+div.account-summary{
+  position:absolute;
+  top:80pt;
+  left:20pt;
+  width:571pt;
+  height:24.5pt;
+  border-top:0.5pt solid #000;
+  border-bottom:0.5pt solid #000;
+}
+div.account-summary p{
+  position:absolute;
+  top:8.4pt;
+  line-height:8pt;
+  font-weight:bold;
+}
+div.account-summary p.account{left:2pt;}
+div.account-summary p.opening-label{left:298pt;}
+div.account-summary p.opening-amount{left:532.3pt;}
 table.operations{
   position:absolute;
   top:104.5pt;
@@ -65,22 +83,21 @@ table.operations tbody tr td {
 
 /* линия между обычными операциями */
 table.operations tbody tr:not(.closing-row):not(.totals-row):not(.last-op-row) td {
-  border-bottom: 0.5pt solid #000;
+  border-bottom: 0.3pt solid #444444;
 }
 
 /* Итоги: жирные границы сверху/снизу */
 table.operations tr.closing-row td {
   font-weight: bold;
   border-top: 1pt solid #000;
-  border-bottom: 1pt solid #000;
+  border-bottom: 0.5pt solid #000;
 }
 
 /* Поступление / Списание: выделяются, последняя строка подведена */
 table.operations tr.totals-row td {
   font-weight: bold;
-}
-table.operations tr.totals-row:last-of-type td {
-  border-bottom: 1pt solid #000;
+  border-top: 0.5pt solid #000;
+  border-bottom: 0.5pt solid #000;
 }
 
 /* Последняя операция без нижней границы */
@@ -109,9 +126,11 @@ table.operations td.total-out{padding-left:167pt;font-weight:bold;}
 
   <h1>Выписка</h1>
   <p style="top:61.3pt;left:20pt;line-height:10pt;">Период: {{ data.statement.period_start|date }} - {{ data.statement.period_end|date }}</p>
-  <p style="top:88.4pt;left:22pt;line-height:8pt;font-weight:bold;">Счёт: {{ data.account.number|account_format }}</p>
-  <p style="top:88.4pt;left:318pt;line-height:8pt;font-weight:bold;">Входящий остаток на {{ data.statement.period_start|date }}</p>
-  <p style="top:88.4pt;left:552.3pt;line-height:8pt;font-weight:bold;">{{ opening_balance|rub_format }}</p>
+  <div class="account-summary">
+    <p class="account">Счёт: {{ data.account.number|account_format }}</p>
+    <p class="opening-label">Входящий остаток на {{ data.statement.period_start|date }}</p>
+    <p class="opening-amount">{{ opening_balance|rub_format }}</p>
+  </div>
 
   <table class="operations">
     <colgroup><col/><col/><col/><col/></colgroup>
