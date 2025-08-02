@@ -31,26 +31,32 @@
   const templateDeleteBtn = document.getElementById('templateDelete');
   const templateCloseBtn = document.getElementById('templateClose');
 
-  const TEMPLATE_KEYS = {
-    counterparty: 'templates_counterparty',
-    description: 'templates_description'
-  };
+  const templateCache = { counterparty: [], description: [] };
 
   let currentTemplateField = null;
   let currentTemplateInput = null;
 
-  function loadTemplates(field) {
-    const raw = localStorage.getItem(TEMPLATE_KEYS[field]);
-    return raw ? JSON.parse(raw) : [];
+  async function fetchTemplates(field) {
+    const resp = await fetch(`/templates/${field}`);
+    templateCache[field] = resp.ok ? await resp.json() : [];
   }
 
-  function saveTemplates(field, arr) {
-    localStorage.setItem(TEMPLATE_KEYS[field], JSON.stringify(arr));
+  function getTemplates(field) {
+    return templateCache[field] || [];
+  }
+
+  async function saveTemplates(field, arr) {
+    await fetch(`/templates/${field}`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(arr)
+    });
+    templateCache[field] = arr;
   }
 
   function renderTemplateList() {
     if (!currentTemplateField) return;
-    const templates = loadTemplates(currentTemplateField);
+    const templates = getTemplates(currentTemplateField);
     templateSelect.innerHTML = '';
     templates.forEach((t, i) => {
       const opt = document.createElement('option');
@@ -60,13 +66,14 @@
     });
   }
 
-  function openTemplateModal(field, inputEl) {
+  async function openTemplateModal(field, inputEl) {
     currentTemplateField = field;
     currentTemplateInput = inputEl;
     templateTitle.textContent = field === 'counterparty'
       ? 'Шаблоны: Плательщик / Получатель'
       : 'Шаблоны: Операция';
     templateText.value = '';
+    await fetchTemplates(field);
     renderTemplateList();
     templateModal.classList.remove('d-none');
   }
@@ -82,15 +89,15 @@
 
   templateSelect.addEventListener('change', () => {
     const idx = templateSelect.value;
-    const templates = loadTemplates(currentTemplateField);
+    const templates = getTemplates(currentTemplateField);
     templateText.value = templates[idx] || '';
   });
 
-  templateSaveBtn.addEventListener('click', () => {
+  templateSaveBtn.addEventListener('click', async () => {
     if (!currentTemplateField) return;
     const text = templateText.value.trim();
     if (!text) return;
-    const templates = loadTemplates(currentTemplateField);
+    const templates = [...getTemplates(currentTemplateField)];
     const idx = templateSelect.value;
     let newIndex = idx;
     if (idx !== '' && templates[idx] !== undefined) {
@@ -99,19 +106,19 @@
       templates.push(text);
       newIndex = templates.length - 1;
     }
-    saveTemplates(currentTemplateField, templates);
+    await saveTemplates(currentTemplateField, templates);
     renderTemplateList();
     templateSelect.value = newIndex;
     templateSelect.dispatchEvent(new Event('change'));
   });
 
-  templateDeleteBtn.addEventListener('click', () => {
+  templateDeleteBtn.addEventListener('click', async () => {
     if (!currentTemplateField) return;
     const idx = templateSelect.value;
     if (idx === '') return;
-    const templates = loadTemplates(currentTemplateField);
+    const templates = [...getTemplates(currentTemplateField)];
     templates.splice(idx, 1);
-    saveTemplates(currentTemplateField, templates);
+    await saveTemplates(currentTemplateField, templates);
     renderTemplateList();
     templateSelect.value = '';
     templateText.value = '';
@@ -120,7 +127,7 @@
   templateUseBtn.addEventListener('click', () => {
     if (!currentTemplateField || !currentTemplateInput) return;
     const idx = templateSelect.value;
-    const templates = loadTemplates(currentTemplateField);
+    const templates = getTemplates(currentTemplateField);
     const value = idx !== '' ? templates[idx] : templateText.value.trim();
     if (value) {
       currentTemplateInput.value = value;
@@ -223,10 +230,10 @@
     inputs.forEach(inp => inp.addEventListener('input', () => { saveStatus.textContent = ''; updateTotals(); }));
 
     tr.querySelectorAll('.template-btn').forEach(btn => {
-      btn.addEventListener('click', () => {
+      btn.addEventListener('click', async () => {
         const field = btn.dataset.field;
         const inputEl = btn.parentElement.querySelector('input');
-        openTemplateModal(field, inputEl);
+        await openTemplateModal(field, inputEl);
       });
     });
 

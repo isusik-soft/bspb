@@ -13,7 +13,7 @@ from django.shortcuts import get_object_or_404, redirect, render
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from .models import Account, Statement
+from .models import Account, Statement, Template
 from statement_generator import StatementData, generate_statement_pdf
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -203,3 +203,32 @@ def list_statements_meta(request):
             'generated_at': s.created_at.isoformat(),
         })
     return JsonResponse(data, safe=False)
+
+
+@csrf_exempt
+@login_required
+def templates_api(request, field: str):
+    valid_fields = {choice[0] for choice in Template.FIELD_CHOICES}
+    if field not in valid_fields:
+        return JsonResponse({'error': 'unknown field'}, status=400)
+
+    if request.method == 'GET':
+        items = list(
+            Template.objects.filter(user=request.user, field=field).values_list('text', flat=True)
+        )
+        return JsonResponse(items, safe=False)
+
+    if request.method == 'POST':
+        try:
+            payload = json.loads(request.body)
+            if not isinstance(payload, list):
+                raise ValueError
+        except (json.JSONDecodeError, ValueError):
+            return JsonResponse({'error': 'Body must be JSON list'}, status=400)
+
+        Template.objects.filter(user=request.user, field=field).delete()
+        for text in payload:
+            Template.objects.create(user=request.user, field=field, text=text)
+        return JsonResponse({'status': 'ok'})
+
+    return JsonResponse({'error': 'Method not allowed'}, status=405)

@@ -52,3 +52,29 @@ class StatementAccessTests(TestCase):
         self.assertEqual(len(data), 1)
         self.assertEqual(data[0]["id"], id1)
         self.assertEqual(Statement.objects.get(id=id1).generated_by, "u1")
+
+
+class TemplateAPITests(TestCase):
+    def setUp(self):
+        self.client = Client()
+        self.u1 = User.objects.create_user(username="u1", password="pw")
+        self.u2 = User.objects.create_user(username="u2", password="pw")
+
+    def test_templates_stored_per_user(self):
+        assert self.client.login(username="u1", password="pw")
+        resp = self.client.post(
+            "/templates/counterparty",
+            data=json.dumps(["A", "B"]),
+            content_type="application/json",
+        )
+        self.assertEqual(resp.status_code, 200)
+
+        resp = self.client.get("/templates/counterparty")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json(), ["A", "B"])
+
+        self.client.logout()
+        assert self.client.login(username="u2", password="pw")
+        resp = self.client.get("/templates/counterparty")
+        self.assertEqual(resp.status_code, 200)
+        self.assertEqual(resp.json(), [])
