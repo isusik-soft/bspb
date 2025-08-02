@@ -37,3 +37,8 @@ body.statements-bg {
   max-width: 400px;
   width: 100%;
 }
+
+#templateSelect {
+  min-height: 10rem;
+  overflow-y: auto;
+}
