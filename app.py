@@ -139,7 +139,8 @@ def statement_custom():
         account_number = payload["account"]
         start = datetime.fromisoformat(payload["from"]).date()
         end = datetime.fromisoformat(payload["to"]).date()
-        opening_balance = float(payload.get("opening_balance", 0))
+        opening_raw = payload.get("opening_balance")
+        opening_balance = float(opening_raw) if opening_raw is not None else None
         ops = payload.get("operations", [])
     except KeyError as e:
         return jsonify({"error": f"Отсутствует поле: {e.args[0]}"}), 400
@@ -150,7 +151,7 @@ def statement_custom():
     account = SimpleAccount(number=account_number, user=user)
     statement = SimpleStatement(period_start=start, period_end=end)
 
-    running_balance = opening_balance
+    running_balance = opening_balance or 0
     transactions: list[SimpleTransaction] = []
     for op in ops:
         try:
