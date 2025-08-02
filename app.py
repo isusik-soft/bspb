@@ -77,6 +77,14 @@ def parse_iso_date(value: Optional[str]) -> Optional[date]:
             return None
 
 
+def parse_amount(value):
+    if value is None:
+        return None
+    if isinstance(value, str):
+        value = value.replace(" ", "").replace(",", ".")
+    return float(value)
+
+
 @app.route("/")
 def index():
     return render_template("index.html")
@@ -140,7 +148,7 @@ def statement_custom():
         start = datetime.fromisoformat(payload["from"]).date()
         end = datetime.fromisoformat(payload["to"]).date()
         opening_raw = payload.get("opening_balance")
-        opening_balance = float(opening_raw) if opening_raw is not None else None
+        opening_balance = parse_amount(opening_raw) if opening_raw is not None else None
         ops = payload.get("operations", [])
     except KeyError as e:
         return jsonify({"error": f"Отсутствует поле: {e.args[0]}"}), 400
@@ -156,7 +164,7 @@ def statement_custom():
     for op in ops:
         try:
             dt = datetime.fromisoformat(op["date"]).date()
-            amount = float(op["amount"])
+            amount = parse_amount(op["amount"])
             desc = op.get("description", "")
             cp = op.get("counterparty", "")
         except KeyError as e:

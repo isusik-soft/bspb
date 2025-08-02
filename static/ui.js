@@ -93,7 +93,8 @@
   }
 
   function getNumber(input) {
-    const val = input.valueAsNumber;
+    const raw = input.value.replace(/\s+/g, '').replace(',', '.');
+    const val = parseFloat(raw);
     return Number.isNaN(val) ? 0 : val;
   }
 
@@ -122,10 +123,10 @@
     let incoming = 0, outgoing = 0;
     Array.from(opsBody.querySelectorAll('tr')).forEach(tr => {
       const val = getNumber(tr.querySelector('.op-amount'));
-      if (val >= 0) incoming += val; else outgoing += Math.abs(val);
+      if (val >= 0) incoming += val; else outgoing += val;
     });
     const opening = getNumber(openingInput);
-    const closing = opening + incoming - outgoing;
+    const closing = opening + incoming + outgoing;
     incomingEl.textContent = incoming.toFixed(2);
     outgoingEl.textContent = outgoing.toFixed(2);
     closingEl.textContent = closing.toFixed(2);
