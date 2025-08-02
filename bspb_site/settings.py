@@ -9,7 +9,10 @@ STATEMENTS_DIR.mkdir(parents=True, exist_ok=True)
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key')
 DEBUG = True
-ALLOWED_HOSTS = ['*']
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '109.120.185.161']
+
+# Allow CSRF requests from the server's public address
+CSRF_TRUSTED_ORIGINS = ['http://109.120.185.161:3000']
 
 INSTALLED_APPS = [
     'django.contrib.admin',
