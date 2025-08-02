@@ -178,10 +178,10 @@
         const created = new Date(st.generated_at).toLocaleString('ru-RU');
         tr.innerHTML =
           `<td>${st.id}</td>` +
-          `<td>${st.owner || ''}</td>` +
-          `<td>${period}</td>` +
-          `<td>${st.bank || ''}</td>` +
           `<td>${created}</td>` +
+          `<td>${st.bank || ''}</td>` +
+          `<td>${period}</td>` +
+          `<td>${st.owner || ''}</td>` +
           `<td class=\"d-flex gap-1\">` +
             `<button type=\"button\" class=\"btn btn-sm btn-outline-primary edit-btn\" data-id=\"${st.id}\">Редактировать</button>` +
             `<a class=\"btn btn-sm btn-outline-secondary\" href=\"/statement/${st.id}.pdf\" target=\"_blank\">PDF</a>` +
