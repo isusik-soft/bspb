@@ -47,15 +47,52 @@ table.operations col:nth-child(1){width:68pt;}
 table.operations col:nth-child(2){width:173pt;}
 table.operations col:nth-child(3){width:246pt;}
 table.operations col:nth-child(4){width:84pt;}
-table.operations th,table.operations td{padding:2pt;vertical-align:top;}
-table.operations th{font-weight:bold;border-bottom:0.5pt solid #000;}
-table.operations td{word-break:break-word;overflow-wrap:anywhere;}
-table.operations tr:not(.closing-row):not(.totals-row) td{border-bottom:0.5pt solid #000;}
-table.operations td:last-child{text-align:right;vertical-align:bottom;}
-table.operations tr.closing-row td{border-top:0.5pt solid #000;border-bottom:0.5pt solid #000;font-weight:bold;}
-table.operations tr.totals-row td{font-weight:bold;border-bottom:0;}
-table.operations tr.totals-row:last-child td{border-bottom:0.5pt solid #000;}
-table.operations tr.last-op-row td{border-bottom:0;}
+/* Заголовок: жирная нижняя граница */
+table.operations thead th {
+  padding: 4px 6px;
+  font-weight: bold;
+  border-bottom: 1pt solid #000;
+  text-align: left;
+}
+
+/* Строки: разделитель между ними */
+table.operations tbody tr td {
+  padding: 4px 6px;
+  vertical-align: top;
+  word-break: break-word;
+  overflow-wrap: anywhere;
+}
+
+/* линия между обычными операциями */
+table.operations tbody tr:not(.closing-row):not(.totals-row):not(.last-op-row) td {
+  border-bottom: 0.5pt solid #000;
+}
+
+/* Итоги: жирные границы сверху/снизу */
+table.operations tr.closing-row td {
+  font-weight: bold;
+  border-top: 1pt solid #000;
+  border-bottom: 1pt solid #000;
+}
+
+/* Поступление / Списание: выделяются, последняя строка подведена */
+table.operations tr.totals-row td {
+  font-weight: bold;
+}
+table.operations tr.totals-row:last-of-type td {
+  border-bottom: 1pt solid #000;
+}
+
+/* Последняя операция без нижней границы */
+table.operations tr.last-op-row td {
+  border-bottom: 0;
+}
+
+/* Выравнивание последнего столбца */
+table.operations td:last-child {
+  text-align: right;
+  vertical-align: bottom;
+}
 table.operations td.closing-label{padding-left:57pt;}
 table.operations td.total-in{padding-left:151pt;font-weight:bold;}
 table.operations td.total-out{padding-left:167pt;font-weight:bold;}
