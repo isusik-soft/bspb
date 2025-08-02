@@ -29,7 +29,7 @@ if "version" not in inspect.signature(pydyf.PDF.__init__).parameters:
 
 from weasyprint import HTML
 
-from models import Account, Statement, Transaction
+from core.models import Account, Statement, Transaction
 from zoneinfo import ZoneInfo
 
 
