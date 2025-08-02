@@ -92,72 +92,79 @@ footer .right {
 }
 </style>
 </head>
+
 <body>
-<h1>Выписка</h1>
-<p>Период: {{ data.statement.period_start|date }} - {{ data.statement.period_end|date }}</p>
-<table class="header-table">
-  <tr>
-    <td colspan="2">Счёт: {{ data.account.number|account_format }}</td>
-  </tr>
-  <tr>
-    <td>Входящий остаток на {{ data.statement.period_start|date }}</td>
-    <td>{{ opening_balance|rub_format }}</td>
-  </tr>
-</table>
+  <div class="page">
+    <img src="out001.png" alt="background image" class="background"/>
+    <img src="static/logo.png" alt="Логотип" class="logo"/>
 
-<table class="operations">
-  <colgroup>
-    <col>
-    <col>
-    <col>
-    <col>
-  </colgroup>
-  <thead>
-    <tr>
-      <th>Дата</th>
-      <th>Плательщик / Получатель</th>
-      <th>Операция</th>
-      <th>Сумма (RUB)</th>
-    </tr>
-  </thead>
-  <tbody>
-    {% for t in data.transactions %}
-    <tr>
-      <td>{{ t.date|date }}</td>
-      <td>{{ t.counterparty or '' }}</td>
-      <td>{{ t.description }}</td>
-      <td>{{ t.amount|rub_format }}</td>
-    </tr>
-    {% endfor %}
-    <tr>
-      <td colspan="3">Исходящий остаток на {{ data.statement.period_end|date }}</td>
-      <td style="font-weight:bold;">{{ closing_balance|rub_format }}</td>
-    </tr>
-    <tr>
-      <td colspan="2"></td>
-      <td>Поступление</td>
-      <td>{{ total_incoming|rub_format }}</td>
-    </tr>
-    <tr>
-      <td colspan="2"></td>
-      <td>Списание</td>
-      <td>{{ total_outgoing|rub_format }}</td>
-    </tr>
-  </tbody>
-</table>
+    <div class="content">
+      <h1>Выписка</h1>
+      <p>
+        Период: {{ data.statement.period_start|date }}
+        –
+        {{ data.statement.period_end|date }}
+      </p>
 
-<footer>
-  <div class="left">
-    <img src="static/logo.svg" alt="Логотип" width="50"/>
-    <div class="text">
-      <div>ПАО "БАНК САНКТ-ПЕТЕРБУРГ"</div>
-      <div>БИК 044030790</div>
+      <table class="header-table">
+        <tr>
+          <td colspan="2">Счёт: {{ data.account.number|account_format }}</td>
+        </tr>
+        <tr>
+          <td>Входящий остаток на {{ data.statement.period_start|date }}</td>
+          <td>{{ opening_balance|rub_format }}</td>
+        </tr>
+      </table>
+
+      <table class="operations">
+        <colgroup><col/><col/><col/><col/></colgroup>
+        <thead>
+          <tr>
+            <th>Дата</th>
+            <th>Плательщик / Получатель</th>
+            <th>Операция</th>
+            <th>Сумма (RUB)</th>
+          </tr>
+        </thead>
+        <tbody>
+          {% for t in data.transactions %}
+          <tr>
+            <td>{{ t.date|date }}</td>
+            <td>{{ t.counterparty or '' }}</td>
+            <td>{{ t.description }}</td>
+            <td>{{ t.amount|rub_format }}</td>
+          </tr>
+          {% endfor %}
+          <tr>
+            <td colspan="3">Исходящий остаток на {{ data.statement.period_end|date }}</td>
+            <td style="font-weight:bold;">{{ closing_balance|rub_format }}</td>
+          </tr>
+          <tr>
+            <td colspan="2"></td>
+            <td>Поступление</td>
+            <td>{{ total_incoming|rub_format }}</td>
+          </tr>
+          <tr>
+            <td colspan="2"></td>
+            <td>Списание</td>
+            <td>{{ total_outgoing|rub_format }}</td>
+          </tr>
+        </tbody>
+      </table>
     </div>
+
+    <footer>
+      <div class="left">
+        <div class="text">
+          <div>ПАО «БАНК САНКТ-ПЕТЕРБУРГ»</div>
+          <div>БИК 044030790</div>
+        </div>
+      </div>
+      <div class="right">
+        <div>{{ data.account.user.username }}</div>
+        <div>{{ data.statement.created_at|format_ts }}</div>
+      </div>
+    </footer>
   </div>
-  <div class="right">
-    <div>{{ data.account.user.username }}</div>
-    <div>{{ data.statement.created_at|format_ts }}</div>
-  </div>
-</footer>
 </body>
 </html>
