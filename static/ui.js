@@ -71,11 +71,12 @@
 
   function addOperation(op = {}) {
     const tr = document.createElement('tr');
+    const amountValue = op.amount != null ? op.amount : '';
     tr.innerHTML = `
       <td><input type="date" class="form-control form-control-sm op-date" value="${op.date || ''}"></td>
       <td><input type="text" class="form-control form-control-sm op-counterparty" value="${op.counterparty || ''}"></td>
       <td><input type="text" class="form-control form-control-sm op-description" value="${op.description || ''}"></td>
-      <td><input type="number" step="0.01" class="form-control form-control-sm op-amount" value="${op.amount != null ? op.amount : ''}"></td>
+      <td><input type="number" step="0.01" class="form-control form-control-sm op-amount" value="${amountValue}"></td>
       <td class="text-nowrap">
         <button class="btn btn-sm btn-outline-secondary duplicate" title="Дублировать">⧉</button>
         <button class="btn btn-sm btn-outline-danger delete" title="Удалить">✕</button>
