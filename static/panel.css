@@ -1,0 +1,9 @@
+.panel-card {
+  border: none;
+  border-radius: 0.75rem;
+}
+
+.panel-card .card-title {
+  font-weight: 600;
+  margin-bottom: 1rem;
+}
