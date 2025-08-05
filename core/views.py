@@ -120,6 +120,10 @@ def panel(request):
 @require_POST
 @login_required
 def statement_custom(request):
+    profile, _ = UserProfile.objects.get_or_create(user=request.user)
+    if not profile.has_active_subscription():
+        return JsonResponse({'error': 'Subscription expired'}, status=403)
+
     try:
         payload = json.loads(request.body)
     except json.JSONDecodeError:

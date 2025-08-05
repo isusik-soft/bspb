@@ -55,7 +55,7 @@
                 <form method="post" class="d-flex align-items-center">
                   {% csrf_token %}
                   <input type="hidden" name="user_id" value="{{ u.id }}">
-                  <input type="date" name="subscription_end" value="{{ u.profile.subscription_end|default:'' }}" class="form-control form-control-sm me-2">
+                  <input type="date" name="subscription_end" value="{{ u.profile.subscription_end|date:'Y-m-d' }}" class="form-control form-control-sm me-2">
                   <button type="submit" name="update_subscription" class="btn btn-outline-secondary btn-sm">Сохранить</button>
                 </form>
               </td>
