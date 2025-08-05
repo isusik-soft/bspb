@@ -7,13 +7,15 @@ from pathlib import Path
 from io import BytesIO
 
 from django.contrib.auth import authenticate, login as auth_login, logout as auth_logout
-from django.contrib.auth.decorators import login_required
+from django.contrib.auth.decorators import login_required, user_passes_test
+from django.contrib.auth.models import User
 from django.http import JsonResponse, FileResponse, HttpResponseNotFound
 from django.shortcuts import get_object_or_404, redirect, render
+from django.utils.crypto import get_random_string
 from django.views.decorators.csrf import csrf_exempt
 from django.views.decorators.http import require_POST
 
-from .models import Account, Statement, Template
+from .models import Account, Statement, Template, UserProfile
 from statement_generator import StatementData, generate_statement_pdf
 
 BASE_DIR = Path(__file__).resolve().parent.parent
@@ -78,6 +80,40 @@ def login_view(request):
 def logout_view(request):
     auth_logout(request)
     return redirect('login')
+
+
+@user_passes_test(lambda u: u.is_staff or u.is_superuser)
+def panel(request):
+    """Панель управления пользователями и их подписками."""
+
+    created_user: dict[str, str] | None = None
+    if request.method == "POST":
+        if "create_user" in request.POST:
+            email = request.POST.get("email", "").strip()
+            if email:
+                password = get_random_string(10)
+                user = User.objects.create_user(username=email, email=email, password=password)
+                UserProfile.objects.create(user=user)
+                created_user = {"email": email, "password": password}
+        elif "update_subscription" in request.POST:
+            user_id = request.POST.get("user_id")
+            end_date = request.POST.get("subscription_end")
+            profile = get_object_or_404(UserProfile, user_id=user_id)
+            if end_date:
+                profile.subscription_end = datetime.fromisoformat(end_date).date()
+            else:
+                profile.subscription_end = None
+            profile.save()
+
+    users = list(User.objects.order_by("id"))
+    for u in users:
+        UserProfile.objects.get_or_create(user=u)
+    users = User.objects.order_by("id").select_related("profile")
+    context = {
+        "users": users,
+        "created_user": created_user,
+    }
+    return render(request, "panel.html", context)
 
 
 @csrf_exempt

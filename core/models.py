@@ -1,5 +1,6 @@
 from django.db import models
 from django.contrib.auth.models import User
+from datetime import date
 
 
 class Account(models.Model):
@@ -61,3 +62,17 @@ class Template(models.Model):
 
     def __str__(self):
         return self.text
+
+
+class UserProfile(models.Model):
+    """Дополнительные данные пользователя."""
+
+    user = models.OneToOneField(User, related_name="profile", on_delete=models.CASCADE)
+    subscription_end = models.DateField(null=True, blank=True)
+
+    def has_active_subscription(self) -> bool:
+        """Возвращает True, если подписка ещё активна."""
+        return self.subscription_end is None or self.subscription_end >= date.today()
+
+    def __str__(self) -> str:  # pragma: no cover - простое представление
+        return self.user.username
