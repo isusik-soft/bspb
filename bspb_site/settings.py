@@ -8,13 +8,20 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 STATEMENTS_DIR.mkdir(parents=True, exist_ok=True)
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key')
-# Disable debug mode for production deployment
-DEBUG = False
-# Allow connections from the production domain in addition to local hosts
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '109.120.185.161', 'mywallets.pro']
 
-# Allow CSRF requests from the server's public address
-CSRF_TRUSTED_ORIGINS = ['http://109.120.185.161:3000']
+DEBUG = True
+
+ALLOWED_HOSTS = [
+    'mywallets.pro',
+    'www.mywallets.pro',
+    '109.120.185.161',
+]
+
+CSRF_TRUSTED_ORIGINS = [
+    "https://mywallets.pro",
+    "https://www.mywallets.pro",
+    "http://109.120.185.161:3000",
+]
 
 INSTALLED_APPS = [
     'django.contrib.admin',
@@ -78,5 +85,5 @@ STATICFILES_STORAGE = 'whitenoise.storage.CompressedManifestStaticFilesStorage'
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'
 
 LOGIN_URL = '/login/'
-LOGIN_REDIRECT_URL = '/' 
+LOGIN_REDIRECT_URL = '/'
 LOGOUT_REDIRECT_URL = '/login/'
