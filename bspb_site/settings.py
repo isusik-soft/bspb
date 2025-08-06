@@ -8,8 +8,10 @@ DATA_DIR.mkdir(parents=True, exist_ok=True)
 STATEMENTS_DIR.mkdir(parents=True, exist_ok=True)
 
 SECRET_KEY = os.environ.get('SECRET_KEY', 'dev-secret-key')
-DEBUG = True
-ALLOWED_HOSTS = ['localhost', '127.0.0.1', '109.120.185.161']
+# Disable debug mode for production deployment
+DEBUG = False
+# Allow connections from the production domain in addition to local hosts
+ALLOWED_HOSTS = ['localhost', '127.0.0.1', '109.120.185.161', 'mywallets.pro']
 
 # Allow CSRF requests from the server's public address
 CSRF_TRUSTED_ORIGINS = ['http://109.120.185.161:3000']
