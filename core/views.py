@@ -1,8 +1,8 @@
 from __future__ import annotations
 
 import json
-from dataclasses import dataclass
-from datetime import datetime, date
+from dataclasses import dataclass, field
+from datetime import datetime, date, UTC
 from pathlib import Path
 from io import BytesIO
 
@@ -39,7 +39,7 @@ class SimpleAccount:
 class SimpleStatement:
     period_start: date
     period_end: date
-    created_at: datetime = datetime.utcnow()
+    created_at: datetime = field(default_factory=lambda: datetime.now(UTC))
     generated_by: str = 'manual'
 
 
